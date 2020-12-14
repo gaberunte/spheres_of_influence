@@ -1,4 +1,4 @@
-# spheres_of_influence
+# Spheres of Influence
 This repository holds the data, analyses, and figure development for our "Spheres of Influence" manuscript. The project focuses on questioning the drivers of soil fungal community turnover in a mixed hardwood-conifer forest. The study was conducted at Sedgwick Reserve in Southern CA, USA.
 
 **Authors:**
