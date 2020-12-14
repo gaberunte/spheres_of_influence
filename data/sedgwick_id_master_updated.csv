@@ -1,0 +1,693 @@
+ID# (20.xxxx),project (lobata/douglasii),region (windmill/lisque/transects),site (treeID/transectID),dist_along_transect,sample type (soil/root/RNA/NaN/etc),mass,direction,coordinates,end coordniate,Litter_depth_cm,DBH,Densiometer,Percent_litter,Percent_grass,Percent_herb,Percent_bare
+20.0001,lobata,windmill,20.1013,NaN,soils bag,NaN,N,"34.69773, 120.02877",,0,78,24/96,5-25,50-75,5-25,5-25
+20.0002,lobata,windmill,20.1013,NaN,tube_1,1.61,N,"34.69773, 120.02868",,9,69,24/87,5-16,50-66,5-16,5-16
+20.0003,lobata,windmill,20.1013,NaN,tube_2,1.40,N,"34.69773, 120.02869",,8,70,24/88,5-17,50-67,5-17,5-17
+20.0004,lobata,windmill,20.1013,NaN,tube_3,NaN,N,"34.69773, 120.02870",,7,71,24/89,5-18,50-68,5-18,5-18
+20.0005,lobata,lisque,20.1004,NaN,soils bag,NaN,N,"34.69393, 120.04800",,0,108,32/96,0-5,25-50,5-25,5-25
+20.0006,lobata,lisque,20.1004,NaN,tube_3,1.50,N,"34.69393, 120.04792",,8,100,32/88,0-3,25-42,5-17,5-17
+20.0007,lobata,lisque,20.1004,NaN,tube_2,1.22,N,"34.69393, 120.04791",,9,099,32/87,0-4,25-41,5-16,5-16
+20.0008,lobata,lisque,20.1004,NaN,tube_1,NaN,N,"34.69393, 120.04793",,7,101,32/89,0-2,25-43,5-18,5-18
+20.0009,lobata,windmill,20.1011,NaN,soils bag,NaN,N,"34.69808,120.03066",,0,119,20/96,0,75-95,0-5,0-5
+20.0010,lobata,windmill,20.1011,NaN,tube_3,1.71,N,"34.69808,120.03057",,9,110,20/87,9,75-86,0-4,0-4
+20.0011,lobata,windmill,20.1011,NaN,tube_2,NaN,N,"34.69808,120.03059",,7,112,20/89,7,75-88,0-2,0-2
+20.0012,lobata,windmill,20.1011,NaN,tube_1,1.30,N,"34.69808,120.03058",,8,111,20/88,8,75-87,0-3,0-3
+20.0013,lobata,windmill,20.1014,NaN,soils bag,NaN,N,"34.69695, 120.02946",,0,107,12/96,0-5,75-95,0,0-5
+20.0014,lobata,windmill,20.1014,NaN,tube_2,1.22,N,"34.69695, 120.02938",,8,099,12/88,0-3,75-87,8,0-3
+20.0015,lobata,windmill,20.1014,NaN,tube_1,1.76,N,"34.69695, 120.02937",,9,098,12/87,0-4,75-86,9,0-4
+20.0016,lobata,windmill,20.1014,NaN,tube_3,NaN,N,"34.69695, 120.02939",,7,100,12/89,0-2,75-88,7,0-2
+20.0025,douglasii,transects,20.2002,14,soils bag,NaN,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0026,douglasii,transects,20.2002,14,tube_3,NaN,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0027,douglasii,transects,20.2002,14,tube_2,1.4,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0028,douglasii,transects,20.2002,14,tube_1,1.21,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0029,douglasii,transects,20.2001,30,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.003,douglasii,transects,20.2001,30,tube_2,1.74,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0031,douglasii,transects,20.2001,30,tube_1,1.58,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0032,douglasii,transects,20.2001,30,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0033,douglasii,transects,20.2002,0,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0034,douglasii,transects,20.2002,0,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0035,douglasii,transects,20.2002,0,tube_2,1.7,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0036,douglasii,transects,20.2002,0,tube_1,1.76,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0037,lobata,lisque,20.1001,NaN,soils bag,NaN,SW,"34.69465, 120.04877",,2,97,52/96,5-25,25-50,5-25,0-5
+20.0038,lobata,lisque,20.1001,NaN,tube_2,NaN,SW,"34.69465, 120.04876",,1,96,52/95,5-24,25-49,5-24,0-4
+20.0039,lobata,lisque,20.1001,NaN,tube_3,1.57,SW,"34.69465, 120.04874",,1,94,52/93,5-22,25-47,5-22,0-2
+20.0040,lobata,lisque,20.1001,NaN,tube_1,1.29,SW,"34.69465, 120.04875",,0,95,52/94,5-23,25-48,5-23,0-3
+20.0041,lobata,lisque,20.1003,NaN,soils bag,NaN,SE,"34.69387, 120.04761",,0,108,17/96,0-5,50-75,25-50,5-25
+20.0042,lobata,lisque,20.1003,NaN,tube_3,1.41,SE,"34.69387, 120.04756",,5,103,17/91,0-0,50-70,25-45,5-20
+20.0043,lobata,lisque,20.1003,NaN,tube_2,1.75,SE,"34.69387, 120.04755",,6,102,17/90,0-1,50-69,25-44,5-19
+20.0044,lobata,lisque,20.1003,NaN,tube_1,NaN,SE,"34.69387, 120.04757",,4,104,17/92,0-1,50-71,25-46,5-21
+20.0045,douglasii,transects,20.2002,24,soils bag,NaN,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0046,douglasii,transects,20.2002,24,tube_2,1.67,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0047,douglasii,transects,20.2002,24,tube_3,NaN,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0048,douglasii,transects,20.2002,24,tube_1,1.71,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0049,lobata,windmill,20.1011,NaN,soils bag,NaN,SE,"34.69808,120.03066",,0,119,20/96,0,75-95,0-5,0-5
+20.0050,lobata,windmill,20.1011,NaN,tube_1,1.53,SE,"34.69808,120.03061",,5,114,20/91,5,75-90,0-0,0-0
+20.0051,lobata,windmill,20.1011,NaN,tube_1,NaN,SE,"34.69808,120.03062",,4,115,20/92,4,75-91,0-1,0-1
+20.0052,lobata,windmill,20.1011,NaN,tube_3,1.52,SE,"34.69808,120.03060",,6,113,20/90,6,75-89,0-1,0-1
+20.0053,douglasii,transects,20.2004,6,soils bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0054,douglasii,transects,20.2004,6,tube_2,1.5,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0055,douglasii,transects,20.2004,6,tube_1,1.52,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0056,douglasii,transects,20.2004,6,tube_3,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0057,lobata,lisque,20.1000,NaN,soils bag,NaN,N,"34.69526, 120.04929",,0,124,35/96,0,75-95,0,0-5
+20.0058,lobata,lisque,20.1000,NaN,tube_1,1.09,N,"34.69526, 120.04920",,9,115,35/87,9,75-86,9,0-4
+20.0059,lobata,lisque,20.1000,NaN,tube_3,NaN,N,"34.69526, 120.04922",,7,117,35/89,7,75-88,7,0-2
+20.0060,lobata,lisque,20.1000,NaN,tube_2,1.43,N,"34.69526, 120.04921",,8,116,35/88,8,75-87,8,0-3
+20.0061,douglasii,transects,20.2003,26,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0062,douglasii,transects,20.2003,26,tube_2,1.69,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0063,douglasii,transects,20.2003,26,tube_1,1.58,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0064,douglasii,transects,20.2003,26,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0069,douglasii,transects,20.2003,14,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.007,douglasii,transects,20.2003,14,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0071,douglasii,transects,20.2003,14,tube_2,1.43,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0072,douglasii,transects,20.2003,14,tube_1,1.53,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0077,douglasii,transects,20.2001,26,soils bag,NaN,NaN,NaN,,9,NaN,NaN,NaN,NaN,NaN,NaN
+20.0078,douglasii,transects,20.2001,26,tube_2,1.92,NaN,NaN,,9,NaN,NaN,NaN,NaN,NaN,NaN
+20.0079,douglasii,transects,20.2001,26,tube_3,NaN,NaN,NaN,,9,NaN,NaN,NaN,NaN,NaN,NaN
+20.008,douglasii,transects,20.2001,26,tube_1,1.77,NaN,NaN,,9,NaN,NaN,NaN,NaN,NaN,NaN
+20.0081,lobata,lisque,20.1001,NaN,soils bag,NaN,N,"34.69465, 120.04877",,2,97,52/96,5-25,25-50,5-25,0-5
+20.0082,lobata,lisque,20.1001,NaN,tube_3,NaN,N,"34.69465, 120.04870",,5,90,52/89,5-18,25-43,5-18,0-2
+20.0083,lobata,lisque,20.1001,NaN,tube_2,1.71,N,"34.69465, 120.04869",,6,89,52/88,5-17,25-42,5-17,0-3
+20.0084,lobata,lisque,20.1001,NaN,tube_1,1.45,N,"34.69465, 120.04868",,7,88,52/87,5-16,25-41,5-16,0-4
+20.0089,lobata,lisque,20.1008,NaN,soils bag,NaN,SW,"34.69106, 120.04314",,1,73,39/96,5-25,50-75,25-50,5-25
+20.0090,lobata,windmill,20.1021,NaN,root bag,NaN,N,"34.68820, 120.03612",,2,117.5,7/96,25-50,50-75,5-25,0-5
+20.0090,lobata,lisque,20.1008,NaN,tube_2,1.87,SW,"34.69106, 120.04312",,1,71,39/94,5-23,50-73,25-48,5-23
+20.0091,lobata,lisque,20.1008,NaN,tube_1,1.22,SW,"34.69106, 120.04311",,2,70,39/93,5-22,50-72,25-47,5-22
+20.0092,lobata,lisque,20.1008,NaN,tube_3,NaN,SW,"34.69106, 120.04313",,0,72,39/95,5-24,50-74,25-49,5-24
+20.0093,douglasii,transects,20.2004,14,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0094,douglasii,transects,20.2004,14,tube_1,1.79,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0095,douglasii,transects,20.2004,14,tube_2,1.54,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0096,douglasii,transects,20.2004,14,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0097,lobata,lisque,20.1005,NaN,soils bag,NaN,N,"34.69386, 120.04808",,0,89,37/96,0-5,75-95,0-5,5-25
+20.0098,lobata,lisque,20.1005,NaN,tube_2,1.86,N,"34.69386, 120.04800",,8,81,37/88,0-3,75-87,0-3,5-17
+20.0099,lobata,lisque,20.1005,NaN,tube_3,NaN,N,"34.69386, 120.04801",,7,82,37/89,0-2,75-88,0-2,5-18
+20.0100,lobata,lisque,20.1005,NaN,tube_1,1.62,N,"34.69386, 120.04799",,9,80,37/87,0-4,75-86,0-4,5-16
+20.0101,douglasii,transects,20.2003,24,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0102,douglasii,transects,20.2003,24,tube_1,1.5,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0103,douglasii,transects,20.2003,24,tube_2,1.67,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0104,douglasii,transects,20.2003,24,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0105,lobata,windmill,20.1017,NaN,soils bag,NaN,SW,"34.68888,120.03606",,1,120,22/96,5-25,50-75,0-5,5-25
+20.0106,lobata,windmill,20.1017,NaN,tube_1,1.28,SW,"34.68888,120.03603",,2,117,22/93,5-22,50-72,0-2,5-22
+20.0107,lobata,windmill,20.1017,NaN,tube_2,1.49,SW,"34.68888,120.03604",,1,118,22/94,5-23,50-73,0-3,5-23
+20.0108,lobata,windmill,20.1017,NaN,tube_3,NaN,SW,"34.68888,120.03605",,0,119,22/95,5-24,50-74,0-4,5-24
+20.0109,lobata,lisque,20.1007,NaN,soils bag,NaN,N,"34.69138, 120.04553",,1.5,135,19/96,0-5,50-75,5-25,5-25
+20.0110,lobata,lisque,20.1007,NaN,tube_1,NaN,N,"34.69138, 120.04546",,1.2,128,19/89,0-2,50-68,5-18,5-18
+20.0111,lobata,lisque,20.1007,NaN,tube_1,1.69,N,"34.69138, 120.04545",,1.3,127,19/88,0-3,50-67,5-17,5-17
+20.0112,lobata,lisque,20.1007,NaN,tube_3,1.28,N,"34.69138, 120.04544",,1.4,126,19/87,0-4,50-66,5-16,5-16
+20.0113,douglasii,transects,20.2004,10,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0114,douglasii,transects,20.2004,10,tube_2,1.62,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0115,douglasii,transects,20.2004,10,tube_1,1.78,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0116,douglasii,transects,20.2004,10,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0117,lobata,windmill,20.1018,NaN,soils bag,NaN,SE,"34.68893,120.03607",,1,105,6/96,5-25,50-75,0-5,0-5
+20.0118,lobata,windmill,20.1018,NaN,tube_1,1.46,SE,"34.68893,120.03601",,5,099,6/90,5-19,50-69,0-1,0-1
+20.0119,lobata,windmill,20.1018,NaN,tube_2,1.48,SE,"34.68893,120.03602",,4,100,6/91,5-20,50-70,0-0,0-0
+20.0120,lobata,windmill,20.1018,NaN,tube_3,NaN,SE,"34.68893,120.03603",,3,101,6/92,5-21,50-71,0-1,0-1
+20.0121,douglasii,transects,20.2004,12,soils bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0122,douglasii,transects,20.2004,12,tube_1,1.72,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0123,douglasii,transects,20.2004,12,tube_2,1.73,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0124,douglasii,transects,20.2004,12,tube_3,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0125,lobata,windmill,20.1016,NaN,soils bag,NaN,SE,"34.69171, 120.03425",,0,139,-,0-5,50-75,0-5,5-25
+20.0126,lobata,windmill,20.1016,NaN,tube_3,1.46,SE,"34.69171, 120.03420",,5,134,-,0-0,50-70,0-0,5-20
+20.0127,lobata,windmill,20.1016,NaN,tube_1,NaN,SE,"34.69171, 120.03421",,4,135,-,0-1,50-71,0-1,5-21
+20.0128,lobata,windmill,20.1016,NaN,tube_2,1.26,SE,"34.69171, 120.03419",,6,133,-,0-1,50-69,0-1,5-19
+20.0129,lobata,windmill,20.1017,NaN,soils bag,NaN,SE,"34.68888,120.03606",,1,120,22/96,5-25,50-75,0-5,5-25
+20.0130,lobata,windmill,20.1017,NaN,tube_2,1.22,SE,"34.68888,120.03601",,4,115,22/91,5-20,50-70,0-0,5-20
+20.0131,lobata,windmill,20.1017,NaN,tube_3,NaN,SE,"34.68888,120.03602",,3,116,22/92,5-21,50-71,0-1,5-21
+20.0132,lobata,windmill,20.1017,NaN,tube_1,1.22,SE,"34.68888,120.03600",,5,114,22/90,5-19,50-69,0-1,5-19
+20.0133,lobata,lisque,20.1005,NaN,soils bag,NaN,SW,"34.69386, 120.04808",,0,89,37/96,0-5,75-95,0-5,5-25
+20.0133,lobata,lisque,20.1005,NaN,tube_2,NaN,SW,"34.69386, 120.04807",,1,88,37/95,0-4,75-94,0-4,5-24
+20.0134,lobata,lisque,20.1005,NaN,tube_1,1.61,SW,"34.69386, 120.04806",,2,87,37/94,0-3,75-93,0-3,5-23
+20.0136,lobata,lisque,20.1005,NaN,tube_1,1.43,SW,"34.69386, 120.04805",,3,86,37/93,0-2,75-92,0-2,5-22
+20.0137,douglasii,transects,20.2004,30,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0138,douglasii,transects,20.2004,30,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0139,douglasii,transects,20.2004,30,tube_1,1.74,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.014,douglasii,transects,20.2004,30,tube_2,1.52,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0141,douglasii,transects,20.2004,2,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0142,douglasii,transects,20.2004,2,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0143,douglasii,transects,20.2004,2,tube_1,1.87,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0144,douglasii,transects,20.2004,2,tube_2,1.5,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0145,douglasii,transects,20.2004,4,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0146,douglasii,transects,20.2004,4,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0147,douglasii,transects,20.2004,4,tube_2,1.62,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0148,douglasii,transects,20.2004,4,tube_1,1.68,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0149,douglasii,transects,20.2002,26,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.015,douglasii,transects,20.2002,26,tube_2,1.65,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0151,douglasii,transects,20.2002,26,tube_1,1.14,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0152,douglasii,transects,20.2002,26,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0153,lobata,lisque,20.1006,NaN,soils bag,NaN,SW,"34.69217, 120.04539",,0,125,33/96,0-5,25-50,25-50,5-25
+20.0154,lobata,lisque,20.1006,NaN,tube_1,1.40,SW,"34.69217, 120.04537",,2,123,33/94,0-3,25-48,25-48,5-23
+20.0155,lobata,lisque,20.1006,NaN,tube_2,NaN,SW,"34.69217, 120.04538",,1,124,33/95,0-4,25-49,25-49,5-24
+20.0156,lobata,lisque,20.1006,NaN,tube_3,1.74,SW,"34.69217, 120.04536",,3,122,33/93,0-2,25-47,25-47,5-22
+20.0157,lobata,lisque,20.1009,NaN,soils bag,NaN,SE,"34.69104, 120.04308
+",,1,60,27/96,5-25,75-95,5-25,0-5
+20.0158,lobata,lisque,20.1009,NaN,tube_1,1.58,SE,"34.69104, 120.04308
+",,5,54,27/90,5-19,75-89,5-19,0-1
+20.0159,lobata,lisque,20.1009,NaN,tube_3,NaN,SE,"34.69104, 120.04308
+",,3,56,27/92,5-21,75-91,5-21,0-1
+20.0160,lobata,lisque,20.1009,NaN,tube_2,1.67,SE,"34.69104, 120.04308
+",,4,55,27/91,5-20,75-90,5-20,0-0
+20.0161,lobata,windmill,20.1016,NaN,soils bag,NaN,SW,"34.69171, 120.03425",,0,139,-,0-5,50-75,0-5,5-25
+20.0162,lobata,windmill,20.1016,NaN,tube_1,NaN,SW,"34.69171, 120.03424",,1,138,-,0-4,50-74,0-4,5-24
+20.0163,lobata,windmill,20.1016,NaN,tube_3,1.51,SW,"34.69171, 120.03423",,2,137,-,0-3,50-73,0-3,5-23
+20.0164,lobata,windmill,20.1016,NaN,tube_2,1.40,SW,"34.69171, 120.03422",,3,136,-,0-2,50-72,0-2,5-22
+20.0165,douglasii,transects,20.2003,20,soils bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0166,douglasii,transects,20.2003,20,tube_2,1.44,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0167,douglasii,transects,20.2003,20,tube_3,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0168,douglasii,transects,20.2003,20,tube_1,1.62,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0169,douglasii,transects,20.2003,22,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.017,douglasii,transects,20.2003,22,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0171,douglasii,transects,20.2003,22,tube_2,1.69,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0172,douglasii,transects,20.2003,22,tube_1,1.76,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0173,lobata,lisque,20.1000,NaN,soils bag,NaN,SW,"34.69526, 120.04929",,0,124,35/96,0,75-95,0,0-5
+20.0174,lobata,lisque,20.1000,NaN,tube_3,NaN,SW,"34.69526, 120.04928",,1,123,35/95,1,75-94,1,0-4
+20.0175,lobata,lisque,20.1000,NaN,tube_1,1.62,SW,"34.69526, 120.04926",,3,121,35/93,3,75-92,3,0-2
+20.0176,lobata,lisque,20.1000,NaN,tube_2,1.85,SW,"34.69526, 120.04927",,2,122,35/94,2,75-93,2,0-3
+20.0177,lobata,lisque,20.1009,NaN,soils bag,NaN,N,"34.69104, 120.04308
+",,1,60,27/96,5-25,75-95,5-25,0-5
+20.0178,lobata,lisque,20.1009,NaN,tube_1,1.48,N,"34.69104, 120.04308
+",,8,51,27/87,5-16,75-86,5-16,0-4
+20.0179,lobata,lisque,20.1009,NaN,tube_2,1.44,N,"34.69104, 120.04308
+",,7,52,27/88,5-17,75-87,5-17,0-3
+20.0180,lobata,lisque,20.1009,NaN,tube_3,NaN,N,"34.69104, 120.04308
+",,6,53,27/89,5-18,75-88,5-18,0-2
+20.0181,lobata,windmill,20.1019,NaN,soils bag,NaN,N,"34.68854, 120.03613",,1,108,12/96,5-25,50-75,0-5,5-25
+20.0182,lobata,windmill,20.1019,NaN,tube_3,1.73,N,"34.68854, 120.03604",,8,099,12/87,5-16,50-66,0-4,5-16
+20.0183,lobata,windmill,20.1019,NaN,tube_1,1.45,N,"34.68854, 120.03605",,7,100,12/88,5-17,50-67,0-3,5-17
+20.0184,lobata,windmill,20.1019,NaN,tube_2,NaN,N,"34.68854, 120.03606",,6,101,12/89,5-18,50-68,0-2,5-18
+20.0185,douglasii,transects,20.2001,4,soils bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0186,douglasii,transects,20.2001,4,tube_2,1.47,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0187,douglasii,transects,20.2001,4,tube_3,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0188,douglasii,transects,20.2001,4,tube_1,1.55,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0193,lobata,lisque,20.1010,NaN,soils bag,NaN,SE,"34.69009,120.04433",,1,169,35/96,5-25,50-75,0-5,5-25
+20.0194,lobata,lisque,20.1010,NaN,tube_3,1.58,SE,"34.69009,120.04427",,5,163,35/90,5-19,50-69,0-1,5-19
+20.0195,lobata,lisque,20.1010,NaN,tube_1,1.56,SE,"34.69009,120.04428",,4,164,35/91,5-20,50-70,0-0,5-20
+20.0196,lobata,lisque,20.1010,NaN,tube_2,,SE,"34.69009,120.04429",,3,165,35/92,5-21,50-71,0-1,5-21
+20.0197,lobata,windmill,20.1020,NaN,soils bag,NaN,SW,"34.68852, 120.03661",,2,151,12/96,25-50,50-75,0-5,5-25
+20.0198,lobata,windmill,20.1020,NaN,tube_2,1.56,SW,"34.68852, 120.03658",,1,148,12/93,25-47,50-72,0-2,5-22
+20.0199,lobata,windmill,20.1020,NaN,tube_3,1.73,SW,"34.68852, 120.03659",,0,149,12/94,25-48,50-73,0-3,5-23
+20.0200,lobata,windmill,20.1020,NaN,tube_1,NaN,SW,"34.68852, 120.03660",,1,150,12/95,25-49,50-74,0-4,5-24
+20.0205,lobata,lisque,20.1003,NaN,soils bag,NaN,N,"34.69387, 120.04761",,0,108,17/96,0-5,50-75,25-50,5-25
+20.0206,lobata,lisque,20.1003,NaN,tube_3,1.60,N,"34.69387, 120.04753",,8,100,17/88,0-3,50-67,25-42,5-17
+20.0207,lobata,lisque,20.1003,NaN,tube_1,NaN,N,"34.69387, 120.04754",,7,101,17/89,0-2,50-68,25-43,5-18
+20.0208,lobata,lisque,20.1003,NaN,tube_2,1.52,N,"34.69387, 120.04752",,9,099,17/87,0-4,50-66,25-41,5-16
+20.0209,douglasii,transects,20.2004,22,soils bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.021,douglasii,transects,20.2004,22,tube_1,1.62,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0211,douglasii,transects,20.2004,22,tube_2,1.7,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0212,douglasii,transects,20.2004,22,tube_3,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0213,lobata,lisque,20.1007,NaN,soils bag,NaN,SE,"34.69138, 120.04553",,1.5,135,19/96,0-5,50-75,5-25,5-25
+20.0214,lobata,lisque,20.1007,NaN,tube_3,1.46,SE,"34.69138, 120.04548",,1.0,130,19/91,0-0,50-70,5-20,5-20
+20.0215,lobata,lisque,20.1007,NaN,tube_1,NaN,SE,"34.69138, 120.04549",,1.1,131,19/92,0-1,50-71,5-21,5-21
+20.0216,lobata,lisque,20.1007,NaN,tube_2,1.75,SE,"34.69138, 120.04547",,1.1,129,19/90,0-1,50-69,5-19,5-19
+20.0217,douglasii,transects,20.2001,20,soils bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0218,douglasii,transects,20.2001,20,tube_2,1.44,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0219,douglasii,transects,20.2001,20,tube_1,1.38,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.022,douglasii,transects,20.2001,20,tube_3,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0221,douglasii,transects,20.2002,30,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0222,douglasii,transects,20.2002,30,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0223,douglasii,transects,20.2002,30,tube_2,1.56,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0224,douglasii,transects,20.2002,30,tube_1,1.47,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0225,douglasii,transects,20.2003,10,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0226,douglasii,transects,20.2003,10,tube_1,1.64,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0227,douglasii,transects,20.2003,10,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0228,douglasii,transects,20.2003,10,tube_2,1.73,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0229,lobata,lisque,20.1002,NaN,soils bag,NaN,SE,"34.69437, 120.04824",,1,115,14/96,5-25,25-50,25-50,0-5
+20.0230,lobata,lisque,20.1002,NaN,tube_2,NaN,SE,"34.69437, 120.04820",,3,111,14/92,5-21,25-46,25-46,0-1
+20.0231,lobata,lisque,20.1002,NaN,tube_3,1.57,SE,"34.69437, 120.04818",,5,109,14/90,5-19,25-44,25-44,0-1
+20.0232,lobata,lisque,20.1002,NaN,tube_1,1.24,SE,"34.69437, 120.04819",,4,110,14/91,5-20,25-45,25-45,0-0
+20.0233,douglasii,transects,20.2001,12,soils bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0234,douglasii,transects,20.2001,12,tube_3,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0235,douglasii,transects,20.2001,12,tube_1,1.58,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0236,douglasii,transects,20.2001,12,tube_2,1.64,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0237,douglasii,transects,20.2004,26,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0238,douglasii,transects,20.2004,26,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0239,douglasii,transects,20.2004,26,tube_2,1.43,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.024,douglasii,transects,20.2004,26,tube_1,1.75,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0241,lobata,windmill,20.1014,NaN,soils bag,NaN,SE,"34.69695, 120.02946",,0,107,12/96,0-5,75-95,0,0-5
+20.0242,lobata,windmill,20.1014,NaN,tube_2,NaN,SE,"34.69695, 120.02942",,4,103,12/92,0-1,75-91,4,0-1
+20.0243,lobata,windmill,20.1014,NaN,tube_1,1.72,SE,"34.69695, 120.02941",,5,102,12/91,0-0,75-90,5,0-0
+20.0244,lobata,windmill,20.1014,NaN,tube_1,1.83,SE,"34.69695, 120.02940",,6,101,12/90,0-1,75-89,6,0-1
+20.0249,douglasii,transects,20.2003,16,soils bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.025,douglasii,transects,20.2003,16,tube_2,1.53,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0251,douglasii,transects,20.2003,16,tube_1,1.61,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0252,douglasii,transects,20.2003,16,tube_3,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0253,douglasii,transects,20.2003,18,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0254,douglasii,transects,20.2003,18,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0255,douglasii,transects,20.2003,18,tube_1,1.53,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0256,douglasii,transects,20.2003,18,tube_2,1.47,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0257,lobata,windmill,20.1018,NaN,soils bag,NaN,N,"34.68893,120.03607",,1,105,6/96,5-25,50-75,0-5,0-5
+20.0258,lobata,windmill,20.1018,NaN,tube_1,1.86,N,"34.68893,120.03598",,8,096,6/87,5-16,50-66,0-4,0-4
+20.0259,lobata,windmill,20.1018,NaN,tube_2,1.72,N,"34.68893,120.03599",,7,097,6/88,5-17,50-67,0-3,0-3
+20.0260,lobata,windmill,20.1018,NaN,tube_3,NaN,N,"34.68893,120.03600",,6,098,6/89,5-18,50-68,0-2,0-2
+20.0262,lobata,windmill,20.1021,NaN,tube_1,1.47,SW,"34.68820, 120.03609",,1,117.2,7/93,25-47,50-72,5-22,0-2
+20.0263,lobata,windmill,20.1021,NaN,tube_2,1.17,SW,"34.68820, 120.03610",,0,117.3,7/94,25-48,50-73,5-23,0-3
+20.0264,lobata,windmill,20.1021,NaN,tube_3,NaN,SW,"34.68820, 120.03611",,1,117.4,7/95,25-49,50-74,5-24,0-4
+20.0265,lobata,windmill,20.1013,NaN,soils bag,NaN,SE,"34.69773, 120.02877",,0,78,24/96,5-25,50-75,5-25,5-25
+20.0266,lobata,windmill,20.1013,NaN,tube_1,1.37,SE,"34.69773, 120.02871",,6,72,24/90,5-19,50-69,5-19,5-19
+20.0267,lobata,windmill,20.1013,NaN,tube_3,NaN,SE,"34.69773, 120.02873",,4,74,24/92,5-21,50-71,5-21,5-21
+20.0268,lobata,windmill,20.1013,NaN,tube_2,1.65,SE,"34.69773, 120.02872",,5,73,24/91,5-20,50-70,5-20,5-20
+20.0278,lobata,windmill,20.1012,NaN,tube_1,NaN,SW,"34.69755, 120.03087",,1,88,42/95,0-4,95-099,1,0-4
+20.0279,lobata,windmill,20.1012,NaN,tube_2,1.80,SW,"34.69755, 120.03085",,3,86,42/93,0-2,95-097,3,0-2
+20.0280,lobata,windmill,20.1012,NaN,tube_3,1.91,SW,"34.69755, 120.03086",,2,87,42/94,0-3,95-098,2,0-3
+20.0281,douglasii,transects,20.2004,24,soils bag,NaN,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0282,douglasii,transects,20.2004,24,tube_1,1.52,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0283,douglasii,transects,20.2004,24,tube_2,1.5,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0284,douglasii,transects,20.2004,24,tube_3,NaN,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0285,lobata,lisque,20.1006,NaN,soils bag,NaN,N,"34.69217, 120.04539",,0,125,33/96,0-5,25-50,25-50,5-25
+20.0286,lobata,lisque,20.1006,NaN,tube_3,1.60,N,"34.69217, 120.04530",,9,116,33/87,0-4,25-41,25-41,5-16
+20.0287,lobata,lisque,20.1006,NaN,tube_2,NaN,N,"34.69217, 120.04532",,7,118,33/89,0-2,25-43,25-43,5-18
+20.0288,lobata,lisque,20.1006,NaN,tube_1,1.54,N,"34.69217, 120.04531",,8,117,33/88,0-3,25-42,25-42,5-17
+20.0289,douglasii,transects,20.2002,4,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.029,douglasii,transects,20.2002,4,tube_1,1.53,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0291,douglasii,transects,20.2002,4,tube_2,1.47,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0301,lobata,windmill,20.1020,NaN,soils bag,NaN,SE,"34.68852, 120.03661",,2,151,12/96,25-50,50-75,0-5,5-25
+20.0302,lobata,windmill,20.1020,NaN,tube_2,1.38,SE,"34.68852, 120.03655",,4,145,12/90,25-44,50-69,0-1,5-19
+20.0303,lobata,windmill,20.1020,NaN,tube_3,1.53,SE,"34.68852, 120.03656",,3,146,12/91,25-45,50-70,0-0,5-20
+20.0304,lobata,windmill,20.1020,NaN,tube_1,NaN,SE,"34.68852, 120.03657",,2,147,12/92,25-46,50-71,0-1,5-21
+20.0305,lobata,lisque,20.1009,NaN,soils bag,NaN,SW,"34.69104, 120.04308
+",,1,60,27/96,5-25,75-95,5-25,0-5
+20.0306,lobata,lisque,20.1009,NaN,tube_2,1.85,SW,"34.69104, 120.04308
+",,1,58,27/94,5-23,75-93,5-23,0-3
+20.0307,lobata,lisque,20.1009,NaN,tube_3,NaN,SW,"34.69104, 120.04308
+",,0,59,27/95,5-24,75-94,5-24,0-4
+20.0308,lobata,lisque,20.1009,NaN,tube_1,1.68,SW,"34.69104, 120.04308
+",,2,57,27/93,5-22,75-92,5-22,0-2
+20.0309,douglasii,transects,20.2002,10,root bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.031,douglasii,transects,20.2002,10,tube_2,1.71,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0311,douglasii,transects,20.2002,10,tube_1,1.77,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0312,douglasii,transects,20.2002,10,tube_3,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0321,douglasii,transects,20.2001,22,soils bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0322,douglasii,transects,20.2001,22,tube_3,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0323,douglasii,transects,20.2001,22,tube_1,1.55,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0324,douglasii,transects,20.2001,22,tube_2,1.54,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0325,douglasii,transects,20.2004,18,soils bag,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0326,douglasii,transects,20.2004,18,tube_3,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0327,douglasii,transects,20.2004,18,tube_2,1.62,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0328,douglasii,transects,20.2004,18,tube_1,1.65,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0329,douglasii,transects,20.2001,6,soils bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.033,douglasii,transects,20.2001,6,tube_3,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0332,douglasii,transects,20.2001,6,tube_1,1.59,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0333,douglasii,transects,20.2002,28,soils bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0334,douglasii,transects,20.2002,28,tube_2,1.57,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0335,douglasii,transects,20.2002,28,tube_1,1.64,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0336,douglasii,transects,20.2002,28,tube_3,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0341,lobata,windmill,20.1015,NaN,soils bag,NaN,SW,"34.69413, 120.03202",,0,88,18/96,0-5,75-95,0-5,0
+20.0342,lobata,windmill,20.1015,NaN,tube_3,1.99,SW,"34.69413, 120.03199",,3,85,18/93,0-2,75-92,0-2,3
+20.0343,lobata,windmill,20.1015,NaN,tube_1,NaN,SW,"34.69413, 120.03201",,1,87,18/95,0-4,75-94,0-4,1
+20.0344,lobata,windmill,20.1015,NaN,tube_1,1.66,SW,"34.69413, 120.03200",,2,86,18/94,0-3,75-93,0-3,2
+20.0345,lobata,lisque,20.1010,NaN,soils bag,NaN,N,"34.69009,120.04433",,1,169,35/96,5-25,50-75,0-5,5-25
+20.0346,lobata,lisque,20.1010,NaN,tube_1,1.18,N,"34.69009,120.04424",,8,160,35/87,5-16,50-66,0-4,5-16
+20.0347,lobata,lisque,20.1010,NaN,tube_2,NaN,N,"34.69009,120.04426",,6,162,35/89,5-18,50-68,0-2,5-18
+20.0348,lobata,lisque,20.1010,NaN,tube_1,1.63,N,"34.69009,120.04425",,7,161,35/88,5-17,50-67,0-3,5-17
+20.0349,douglasii,transects,20.2001,0,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.035,douglasii,transects,20.2001,0,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0351,douglasii,transects,20.2001,0,tube_2,1.49,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0352,douglasii,transects,20.2001,0,tube_1,1.57,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0357,douglasii,transects,20.2001,2,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0358,douglasii,transects,20.2001,2,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0359,douglasii,transects,20.2001,2,tube_2,1.6,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.036,douglasii,transects,20.2001,2,tube_1,1.47,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0365,lobata,windmill,20.1013,NaN,soils bag,NaN,SW,"34.69773, 120.02877",,0,78,24/96,5-25,50-75,5-25,5-25
+20.0366,lobata,windmill,20.1013,NaN,tube_1,1.81,SW,"34.69773, 120.02874",,3,75,24/93,5-22,50-72,5-22,5-22
+20.0367,lobata,windmill,20.1013,NaN,tube_2,1.64,SW,"34.69773, 120.02875",,2,76,24/94,5-23,50-73,5-23,5-23
+20.0368,lobata,windmill,20.1013,NaN,tube_3,NaN,SW,"34.69773, 120.02876",,1,77,24/95,5-24,50-74,5-24,5-24
+20.0369,lobata,lisque,20.1003,NaN,soils bag,NaN,SW,"34.69387, 120.04761",,0,108,17/96,0-5,50-75,25-50,5-25
+20.037,lobata,lisque,20.1003,NaN,tube_3,1.70,SW,"34.69387, 120.04759",,2,106,17/94,0-3,50-73,25-48,5-23
+20.0371,lobata,lisque,20.1003,NaN,tube_2,1.33,SW,"34.69387, 120.04758",,3,105,17/93,0-2,50-72,25-47,5-22
+20.0372,lobata,lisque,20.1003,NaN,tube_1,NaN,SW,"34.69387, 120.04760",,1,107,17/95,0-4,50-74,25-49,5-24
+20.0377,lobata,windmill,20.1012,NaN,soils bag,NaN,SE,"34.69755, 120.03088",,0,89,42/96,0-5,95-100,0,0-5
+20.0377,lobata,windmill,20.1012,NaN,soils bag,NaN,SW,"34.69755, 120.03088",,0,89,42/96,0-5,95-100,0,0-5
+20.0378,lobata,windmill,20.1012,NaN,tube_1,NaN,SE,"34.69755, 120.03084",,4,85,42/92,0-1,95-096,4,0-1
+20.0379,lobata,windmill,20.1012,NaN,tube_2,1.23,SE,"34.69755, 120.03082",,6,83,42/90,0-1,95-094,6,0-1
+20.0380,lobata,windmill,20.1012,NaN,tube_3,1.46,SE,"34.69755, 120.03083",,5,84,42/91,0-0,95-095,5,0-0
+20.0381,lobata,windmill,20.1019,NaN,soils bag,NaN,SE,"34.68854, 120.03613",,1,108,12/96,5-25,50-75,0-5,5-25
+20.0382,lobata,windmill,20.1019,NaN,tube_3,1.42,SE,"34.68854, 120.03607",,5,102,12/90,5-19,50-69,0-1,5-19
+20.0383,lobata,windmill,20.1019,NaN,tube_1,1.24,SE,"34.68854, 120.03608",,4,103,12/91,5-20,50-70,0-0,5-20
+20.0384,lobata,windmill,20.1019,NaN,tube_2,NaN,SE,"34.68854, 120.03609",,3,104,12/92,5-21,50-71,0-1,5-21
+20.0385,lobata,lisque,20.1010,NaN,soils bag,NaN,SW,"34.69009,120.04433",,1,169,35/96,5-25,50-75,0-5,5-25
+20.0386,lobata,lisque,20.1010,NaN,tube_1,1.61,SW,"34.69009,120.04431",,1,167,35/94,5-23,50-73,0-3,5-23
+20.0387,lobata,lisque,20.1010,NaN,tube_2,NaN,SW,"34.69009,120.04432",,0,168,35/95,5-24,50-74,0-4,5-24
+20.0388,lobata,lisque,20.1010,NaN,tube_3,1.71,SW,"34.69009,120.04430",,2,166,35/93,5-22,50-72,0-2,5-22
+20.0393,lobata,windmill,20.1011,NaN,soils bag,NaN,SW,"34.69808,120.03066",,0,119,20/96,0,75-95,0-5,0-5
+20.0394,lobata,windmill,20.1011,NaN,tube_2,1.31,SW,"34.69808,120.03063",,3,116,20/93,3,75-92,0-2,0-2
+20.0395,lobata,windmill,20.1011,NaN,tube_1,NaN,SW,"34.69808,120.03065",,1,118,20/95,1,75-94,0-4,0-4
+20.0396,lobata,windmill,20.1011,NaN,tube_3,1.81,SW,"34.69808,120.03064",,2,117,20/94,2,75-93,0-3,0-3
+20.0397,douglasii,transects,20.2004,8,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0398,douglasii,transects,20.2004,8,tube_1,1.51,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0399,douglasii,transects,20.2004,8,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.04,douglasii,transects,20.2004,8,tube_2,1.48,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0401,lobata,windmill,20.1017,NaN,soils bag,NaN,N,"34.68888,120.03606",,1,120,22/96,5-25,50-75,0-5,5-25
+20.0402,douglasii,transects,20.2002,6,root bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0402,lobata,windmill,20.1017,NaN,tube_2,1.36,N,"34.68888,120.03597",,8,111,22/87,5-16,50-66,0-4,5-16
+20.0403,lobata,windmill,20.1017,NaN,tube_3,1.39,N,"34.68888,120.03598",,7,112,22/88,5-17,50-67,0-3,5-17
+20.0404,lobata,windmill,20.1017,NaN,tube_1,NaN,N,"34.68888,120.03599",,6,113,22/89,5-18,50-68,0-2,5-18
+20.0409,lobata,windmill,20.1015,NaN,soils bag,NaN,SE,"34.69413, 120.03202",,0,88,18/96,0-5,75-95,0-5,0
+20.041,lobata,windmill,20.1015,NaN,tube_1,1.92,SE,"34.69413, 120.03197",,5,83,18/91,0-0,75-90,0-0,5
+20.0411,lobata,windmill,20.1015,NaN,tube_3,1.87,SE,"34.69413, 120.03196",,6,82,18/90,0-1,75-89,0-1,6
+20.0412,lobata,windmill,20.1015,NaN,tube_2,NaN,SE,"34.69413, 120.03198",,4,84,18/92,0-1,75-91,0-1,4
+20.0413,douglasii,transects,20.2004,28,soils bag,NaN,NaN,NaN,,8,NaN,NaN,NaN,NaN,NaN,NaN
+20.0414,douglasii,transects,20.2004,28,tube_2,1.14,NaN,NaN,,8,NaN,NaN,NaN,NaN,NaN,NaN
+20.0415,douglasii,transects,20.2004,28,tube_3,NaN,NaN,NaN,,8,NaN,NaN,NaN,NaN,NaN,NaN
+20.0416,douglasii,transects,20.2004,28,tube_1,1.17,NaN,NaN,,8,NaN,NaN,NaN,NaN,NaN,NaN
+20.0417,douglasii,transects,20.2003,30,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0418,douglasii,transects,20.2003,30,tube_1,1.73,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0419,douglasii,transects,20.2003,30,tube_2,1.43,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.042,douglasii,transects,20.2003,30,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0421,douglasii,transects,20.2003,12,soils bag,NaN,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0422,douglasii,transects,20.2001,24,tube_1,1.76,NaN,NaN,,3.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0422,douglasii,transects,20.2003,12,tube_2,1.72,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0423,douglasii,transects,20.2003,12,tube_3,NaN,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0424,douglasii,transects,20.2001,24,soils bag,NaN,NaN,NaN,,3.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0425,douglasii,transects,20.2003,12,tube_1,1.7,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0426,douglasii,transects,20.2001,24,tube_2,1.55,NaN,NaN,,3.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0428,douglasii,transects,20.2001,24,tube_3,NaN,NaN,NaN,,3.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0429,lobata,windmill,20.1015,NaN,soils bag,NaN,N,"34.69413, 120.03202",,0,88,18/96,0-5,75-95,0-5,0
+20.0430,lobata,windmill,20.1015,NaN,tube_3,1.58,N,"34.69413, 120.03193",,9,79,18/87,0-4,75-86,0-4,9
+20.0431,lobata,windmill,20.1015,NaN,tube_1,1.48,N,"34.69413, 120.03194",,8,80,18/88,0-3,75-87,0-3,8
+20.0432,lobata,windmill,20.1015,NaN,tube_2,NaN,N,"34.69413, 120.03195",,7,81,18/89,0-2,75-88,0-2,7
+20.0437,lobata,lisque,20.1002,NaN,soils bag,NaN,SW,"34.69437, 120.04824",,1,115,14/96,5-25,25-50,25-50,0-5
+20.0438,lobata,lisque,20.1002,NaN,tube_1,NaN,SW,"34.69437, 120.04823",,0,114,14/95,5-24,25-49,25-49,0-4
+20.0439,lobata,lisque,20.1002,NaN,tube_3,1.49,SW,"34.69437, 120.04821",,2,112,14/93,5-22,25-47,25-47,0-2
+20.0440,lobata,lisque,20.1002,NaN,tube_1,1.31,SW,"34.69437, 120.04822",,1,113,14/94,5-23,25-48,25-48,0-3
+20.0441,douglasii,transects,20.2003,0,soils bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0442,douglasii,transects,20.2003,0,tube_2,1.56,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0443,douglasii,transects,20.2003,0,tube_1,1.53,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0444,douglasii,transects,20.2003,0,tube_3,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0445,lobata,lisque,20.1001,NaN,soils bag,NaN,SE,"34.69465, 120.04877",,2,97,52/96,5-25,25-50,5-25,0-5
+20.0446,lobata,lisque,20.1001,NaN,tube_1,1.55,SE,"34.69465, 120.04871",,4,91,52/90,5-19,25-44,5-19,0-1
+20.0447,lobata,lisque,20.1001,NaN,tube_1,1.72,SE,"34.69465, 120.04872",,3,92,52/91,5-20,25-45,5-20,0-0
+20.0448,lobata,lisque,20.1001,NaN,tube_2,NaN,SE,"34.69465, 120.04873",,2,93,52/92,5-21,25-46,5-21,0-1
+20.0449,lobata,windmill,20.1019,NaN,soils bag,NaN,SW,"34.68854, 120.03613",,1,108,12/96,5-25,50-75,0-5,5-25
+20.0450,lobata,windmill,20.1019,NaN,tube_3,1.14,SW,"34.68854, 120.03610",,2,105,12/93,5-22,50-72,0-2,5-22
+20.0451,lobata,windmill,20.1019,NaN,tube_1,1.50,SW,"34.68854, 120.03611",,1,106,12/94,5-23,50-73,0-3,5-23
+20.0452,lobata,windmill,20.1019,NaN,tube_2,NaN,SW,"34.68854, 120.03612",,0,107,12/95,5-24,50-74,0-4,5-24
+20.0453,douglasii,transects,20.2001,14,soils bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0454,douglasii,transects,20.2001,14,tube_1,1.69,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0455,douglasii,transects,20.2001,14,tube_3,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0456,douglasii,transects,20.2001,14,tube_2,1.79,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0457,lobata,windmill,20.1016,NaN,soils bag,NaN,N,"34.69171, 120.03425",,0,139,-,0-5,50-75,0-5,5-25
+20.0458,lobata,windmill,20.1016,NaN,tube_1,NaN,N,"34.69171, 120.03418",,7,132,-,0-2,50-68,0-2,5-18
+20.0459,lobata,windmill,20.1016,NaN,tube_3,1.34,N,"34.69171, 120.03417",,8,131,-,0-3,50-67,0-3,5-17
+20.0460,lobata,windmill,20.1016,NaN,tube_2,1.57,N,"34.69171, 120.03416",,9,130,-,0-4,50-66,0-4,5-16
+20.0465,douglasii,transects,20.2004,20,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0466,douglasii,transects,20.2004,20,tube_1,1.63,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0467,douglasii,transects,20.2004,20,tube_2,1.63,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0468,douglasii,transects,20.2004,20,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0469,lobata,lisque,20.1002,NaN,soils bag,NaN,N,"34.69437, 120.04824",,1,115,14/96,5-25,25-50,25-50,0-5
+20.0470,lobata,lisque,20.1002,NaN,tube_1,1.68,N,"34.69437, 120.04816",,7,107,14/88,5-17,25-42,25-42,0-3
+20.0471,lobata,lisque,20.1002,NaN,tube_3,1.52,N,"34.69437, 120.04815",,8,106,14/87,5-16,25-41,25-41,0-4
+20.0472,lobata,lisque,20.1002,NaN,tube_2,NaN,N,"34.69437, 120.04817",,6,108,14/89,5-18,25-43,25-43,0-2
+20.0473,douglasii,transects,20.2004,0,soils bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0474,douglasii,transects,20.2004,0,tube_2,1.49,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0475,douglasii,transects,20.2004,0,tube_3,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0476,douglasii,transects,20.2004,0,tube_1,1.77,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0477,douglasii,transects,20.2003,4,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0478,douglasii,transects,20.2003,4,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0479,douglasii,transects,20.2003,4,tube_2,1.47,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.048,douglasii,transects,20.2003,4,tube_1,1.57,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0485,lobata,lisque,20.1007,NaN,soils bag,NaN,SW,"34.69138, 120.04553",,1.5,135,19/96,0-5,50-75,5-25,5-25
+20.0486,lobata,lisque,20.1007,NaN,tube_3,1.78,SW,"34.69138, 120.04551",,1.3,133,19/94,0-3,50-73,5-23,5-23
+20.0487,lobata,lisque,20.1007,NaN,tube_1,NaN,SW,"34.69138, 120.04552",,1.4,134,19/95,0-4,50-74,5-24,5-24
+20.0488,lobata,lisque,20.1007,NaN,tube_2,1.85,SW,"34.69138, 120.04550",,1.2,132,19/93,0-2,50-72,5-22,5-22
+20.0497,lobata,lisque,20.1005,NaN,soils bag,NaN,SE,"34.69386, 120.04808",,0,89,37/96,0-5,75-95,0-5,5-25
+20.0498,lobata,lisque,20.1005,NaN,tube_2,1.80,SE,"34.69386, 120.04803",,5,84,37/91,0-0,75-90,0-0,5-20
+20.0499,lobata,lisque,20.1005,NaN,tube_1,1.64,SE,"34.69386, 120.04802",,6,83,37/90,0-1,75-89,0-1,5-19
+20.0500,lobata,lisque,20.1005,NaN,tube_3,NaN,SE,"34.69386, 120.04804",,4,85,37/92,0-1,75-91,0-1,5-21
+20.0501,douglasii,transects,20.2003,2,soils bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0502,douglasii,transects,20.2003,2,tube_2,1.62,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0503,douglasii,transects,20.2003,2,tube_1,1.54,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0504,douglasii,transects,20.2003,2,tube_3,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0505,douglasii,transects,20.2001,10,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0506,douglasii,transects,20.2001,10,tube_2,1.55,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0507,douglasii,transects,20.2001,10,tube_1,1.56,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0508,douglasii,transects,20.2001,10,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0509,lobata,windmill,20.1014,NaN,soils bag,NaN,SW,"34.69695, 120.02946",,0,107,12/96,0-5,75-95,0,0-5
+20.0510,lobata,windmill,20.1014,NaN,tube_3,1.11,SW,"34.69695, 120.02943",,3,104,12/93,0-2,75-92,3,0-2
+20.0511,lobata,windmill,20.1014,NaN,tube_2,NaN,SW,"34.69695, 120.02945",,1,106,12/95,0-4,75-94,1,0-4
+20.0512,lobata,windmill,20.1014,NaN,tube_1,1.92,SW,"34.69695, 120.02944",,2,105,12/94,0-3,75-93,2,0-3
+20.0513,douglasii,transects,20.2003,6,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0514,douglasii,transects,20.2003,6,tube_2,1.64,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0515,douglasii,transects,20.2003,6,tube_1,1.79,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0516,douglasii,transects,20.2003,6,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0517,lobata,lisque,20.1000,NaN,soils bag,NaN,SE,"34.69526, 120.04929",,0,124,35/96,0,75-95,0,0-5
+20.0518,lobata,lisque,20.1000,NaN,tube_3,NaN,SE,"34.69526, 120.04925",,4,120,35/92,4,75-91,4,0-1
+20.0519,lobata,lisque,20.1000,NaN,tube_2,1.57,SE,"34.69526, 120.04924",,5,119,35/91,5,75-90,5,0-0
+20.0520,lobata,lisque,20.1000,NaN,tube_1,1.90,SE,"34.69526, 120.04923",,6,118,35/90,6,75-89,6,0-1
+20.0521,douglasii,transects,20.2002,16,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0522,douglasii,transects,20.2002,16,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0523,douglasii,transects,20.2002,16,tube_2,1.52,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0524,douglasii,transects,20.2002,16,tube_1,1.62,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0529,lobata,windmill,20.1012,NaN,soils bag,NaN,N,"34.69755, 120.03088",,0,89,42/96,0-5,95-100,0,0-5
+20.0530,lobata,windmill,20.1012,NaN,tube_1,NaN,N,"34.69755, 120.03081",,7,82,42/89,0-2,95-093,7,0-2
+20.0531,lobata,windmill,20.1012,NaN,tube_3,1.72,N,"34.69755, 120.03080",,8,81,42/88,0-3,95-092,8,0-3
+20.0532,lobata,windmill,20.1012,NaN,tube_2,1.26,N,"34.69755, 120.03079",,9,80,42/87,0-4,95-091,9,0-4
+20.0533,douglasii,transects,20.2002,12,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0534,douglasii,transects,20.2002,12,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0535,douglasii,transects,20.2002,12,tube_2,1.51,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0536,douglasii,transects,20.2002,12,tube_1,1.56,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0537,douglasii,transects,20.2001,16,soils bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0538,douglasii,transects,20.2001,16,tube_2,1.54,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0539,douglasii,transects,20.2001,16,tube_3,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.054,douglasii,transects,20.2001,16,tube_1,1.54,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0541,douglasii,transects,20.2001,28,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0542,douglasii,transects,20.2001,28,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0543,douglasii,transects,20.2001,28,tube_2,1.62,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0544,douglasii,transects,20.2001,28,tube_1,1.76,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0545,lobata,windmill,20.1020,NaN,soils bag,NaN,N,"34.68852, 120.03661",,2,151,12/96,25-50,50-75,0-5,5-25
+20.0546,lobata,windmill,20.1020,NaN,tube_3,1.27,N,"34.68852, 120.03652",,7,142,12/87,25-41,50-66,0-4,5-16
+20.0547,lobata,windmill,20.1020,NaN,tube_1,1.58,N,"34.68852, 120.03653",,6,143,12/88,25-42,50-67,0-3,5-17
+20.0548,lobata,windmill,20.1020,NaN,tube_1,NaN,N,"34.68852, 120.03654",,5,144,12/89,25-43,50-68,0-2,5-18
+20.0549,lobata,lisque,20.1004,NaN,soils bag,NaN,SE,"34.69393, 120.04800",,0,108,32/96,0-5,25-50,5-25,5-25
+20.0550,lobata,lisque,20.1004,NaN,tube_1,1.21,SE,"34.69393, 120.04794",,6,102,32/90,0-1,25-44,5-19,5-19
+20.0551,lobata,lisque,20.1004,NaN,tube_2,1.63,SE,"34.69393, 120.04795",,5,103,32/91,0-0,25-45,5-20,5-20
+20.0552,lobata,lisque,20.1004,NaN,tube_3,NaN,SE,"34.69393, 120.04796",,4,104,32/92,0-1,25-46,5-21,5-21
+20.0553,lobata,windmill,20.1018,NaN,soils bag,NaN,SW,"34.68893,120.03607",,1,105,6/96,5-25,50-75,0-5,0-5
+20.0554,lobata,windmill,20.1018,NaN,tube_1,1.16,SW,"34.68893,120.03604",,2,102,6/93,5-22,50-72,0-2,0-2
+20.0555,lobata,windmill,20.1018,NaN,tube_2,NaN,SW,"34.68893,120.03606",,0,104,6/95,5-24,50-74,0-4,0-4
+20.0556,lobata,windmill,20.1018,NaN,tube_1,1.57,SW,"34.68893,120.03605",,1,103,6/94,5-23,50-73,0-3,0-3
+20.0557,lobata,lisque,20.1006,NaN,soils bag,NaN,SE,"34.69217, 120.04539",,0,125,33/96,0-5,25-50,25-50,5-25
+20.0558,lobata,lisque,20.1006,NaN,tube_1,1.72,SE,"34.69217, 120.04534",,5,120,33/91,0-0,25-45,25-45,5-20
+20.0559,lobata,lisque,20.1006,NaN,tube_2,NaN,SE,"34.69217, 120.04535",,4,121,33/92,0-1,25-46,25-46,5-21
+20.056,lobata,lisque,20.1006,NaN,tube_3,1.94,SE,"34.69217, 120.04533",,6,119,33/90,0-1,25-44,25-44,5-19
+20.0561,douglasii,transects,20.2002,22,soils bag,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0562,douglasii,transects,20.2002,22,tube_2,1.52,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0563,douglasii,transects,20.2002,22,tube_3,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0564,douglasii,transects,20.2002,22,tube_1,1.79,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0565,lobata,lisque,20.1008,NaN,soils bag,NaN,SE,"34.69106, 120.04314",,1,73,39/96,5-25,50-75,25-50,5-25
+20.0566,lobata,lisque,20.1008,NaN,tube_2,1.87,SE,"34.69106, 120.04308",,5,67,39/90,5-19,50-69,25-44,5-19
+20.0567,lobata,lisque,20.1008,NaN,tube_3,1.87,SE,"34.69106, 120.04309",,4,68,39/91,5-20,50-70,25-45,5-20
+20.0568,lobata,lisque,20.1008,NaN,tube_1,NaN,SE,"34.69106, 120.04310",,3,69,39/92,5-21,50-71,25-46,5-21
+20.0577,douglasii,transects,20.2001,18,soils bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0578,douglasii,transects,20.2001,18,tube_1,1.61,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0579,douglasii,transects,20.2001,18,tube_2,1.46,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.058,douglasii,transects,20.2001,18,tube_3,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0581,douglasii,transects,20.2003,28,soils bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0582,douglasii,transects,20.2003,28,tube_2,1.32,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0583,douglasii,transects,20.2003,28,tube_1,1.44,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0584,douglasii,transects,20.2003,28,tube_3,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0586,lobata,windmill,20.1021,NaN,tube_2,1.32,SE,"34.68820, 120.03606",,4,117.1,7/90,25-44,50-69,5-19,0-1
+20.0587,lobata,windmill,20.1021,NaN,tube_3,1.40,SE,"34.68820, 120.03607",,3,117.0,7/91,25-45,50-70,5-20,0-0
+20.0588,lobata,windmill,20.1021,NaN,tube_1,NaN,SE,"34.68820, 120.03608",,2,117.1,7/92,25-46,50-71,5-21,0-1
+20.0589,douglasii,transects,20.2002,8,soils bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.059,douglasii,transects,20.2002,8,tube_3,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0591,douglasii,transects,20.2002,8,tube_1,1.55,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0593,douglasii,transects,20.2002,8,tube_2,1.52,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0597,douglasii,transects,20.2002,6,soils bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0598,douglasii,transects,20.2002,4,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0598,douglasii,transects,20.2002,6,tube_3,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0599,douglasii,transects,20.2002,6,tube_1,1.63,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.06,douglasii,transects,20.2002,6,tube_2,1.47,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0601,lobata,lisque,20.1008,NaN,soils bag,NaN,N,"34.69106, 120.04314",,1,73,39/96,5-25,50-75,25-50,5-25
+20.0602,lobata,lisque,20.1008,NaN,tube_1,NaN,N,"34.69106, 120.04307",,6,66,39/89,5-18,50-68,25-43,5-18
+20.0603,lobata,lisque,20.1008,NaN,tube_3,1.93,N,"34.69106, 120.04306",,7,65,39/88,5-17,50-67,25-42,5-17
+20.0605,douglasii,transects,20.2004,16,soils bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0605,lobata,lisque,20.1008,NaN,tube_2,1.51,N,"34.69106, 120.04305",,8,64,39/87,5-16,50-66,25-41,5-16
+20.0606,douglasii,transects,20.2004,16,tube_1,1.8,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0607,douglasii,transects,20.2004,16,tube_3,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0608,douglasii,transects,20.2004,16,tube_2,1.57,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0609,douglasii,transects,20.2002,2,soils bag,NaN,NaN,NaN,,2.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.061,douglasii,transects,20.2002,2,tube_1,1.56,NaN,NaN,,2.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0611,douglasii,transects,20.2002,2,tube_2,1.7,NaN,NaN,,2.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0612,douglasii,transects,20.2002,2,tube_3,NaN,NaN,NaN,,2.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0613,lobata,windmill,20.1021,NaN,soils bag,NaN,N,"34.68820, 120.03612",,2,117.5,7/96,25-50,50-75,5-25,0-5
+20.0614,lobata,windmill,20.1021,NaN,tube_2,1.77,N,"34.68820, 120.03603",,7,117.4,7/87,25-41,50-66,5-16,0-4
+20.0615,lobata,windmill,20.1021,NaN,tube_3,1.92,N,"34.68820, 120.03604",,6,117.3,7/88,25-42,50-67,5-17,0-3
+20.0616,lobata,windmill,20.1021,NaN,tube_1,NaN,N,"34.68820, 120.03605",,5,117.2,7/89,25-43,50-68,5-18,0-2
+20.0617,douglasii,transects,20.2002,18,soils bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0618,douglasii,transects,20.2002,18,tube_2,1.73,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0619,douglasii,transects,20.2002,18,tube_3,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.062,douglasii,transects,20.2002,18,tube_1,1.84,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0621,douglasii,transects,20.2002,20,soils bag,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0622,douglasii,transects,20.2002,20,tube_3,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0623,douglasii,transects,20.2002,20,tube_1,1.58,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0624,douglasii,transects,20.2002,20,tube_2,1.69,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0625,douglasii,transects,20.2001,8,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0626,douglasii,transects,20.2001,8,tube_1,1.68,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0627,douglasii,transects,20.2001,8,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0628,douglasii,transects,20.2001,8,tube_2,1.7,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0629,douglasii,transects,20.2003,8,soils bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.063,douglasii,transects,20.2003,8,tube_2,1.62,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0631,douglasii,transects,20.2003,8,tube_3,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0632,douglasii,transects,20.2003,8,tube_1,1.59,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0633,lobata,lisque,20.1004,NaN,soils bag,NaN,SW,"34.69393, 120.04800",,0,108,32/96,0-5,25-50,5-25,5-25
+20.0634,lobata,lisque,20.1004,NaN,tube_3,NaN,SW,"34.69393, 120.04799",,1,107,32/95,0-4,25-49,5-24,5-24
+20.0635,lobata,lisque,20.1004,NaN,tube_2,1.51,SW,"34.69393, 120.04798",,2,106,32/94,0-3,25-48,5-23,5-23
+20.0636,lobata,lisque,20.1004,NaN,tube_1,1.78,SW,"34.69393, 120.04797",,3,105,32/93,0-2,25-47,5-22,5-22
+20.0641,lobata,lisque,20.1005,NaN,root bag,NaN,SW,"34.69386, 120.04808",,0,89,37/96,0-5,75-95,0-5,5-25
+20.0642,lobata,windmill,20.1012,NaN,root bag,NaN,SE,"34.69755, 120.03088",,0,89,42/96,0-5,95-100,0,0-5
+20.0644,douglasii,transects,20.2002,4,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0646,lobata,windmill,20.1015,NaN,root bag,NaN,N,"34.69413, 120.03202",,0,88,18/96,0-5,75-95,0-5,0
+20.0647,douglasii,transects,20.2003,22,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0649,lobata,windmill,20.1013,NaN,root bag,NaN,SE,"34.69773, 120.02877",,0,78,24/96,5-25,50-75,5-25,5-25
+20.065,douglasii,transects,20.2001,4,root bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0651,lobata,lisque,20.1003,NaN,root bag,NaN,N,"34.69387, 120.04761",,0,108,17/96,0-5,50-75,25-50,5-25
+20.0652,douglasii,transects,20.2001,0,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0653,lobata,lisque,20.1000,NaN,root bag,NaN,N,"34.69526, 120.04929",,0,124,35/96,0,75-95,0,0-5
+20.0654,douglasii,transects,20.2004,22,root bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0656,douglasii,transects,20.2001,16,root bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0657,douglasii,transects,20.2002,16,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0658,douglasii,transects,20.2004,16,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0659,douglasii,transects,20.2003,12,root bag,NaN,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.066,lobata,lisque,20.1003,NaN,root bag,NaN,SW,"34.69387, 120.04761",,0,108,17/96,0-5,50-75,25-50,5-25
+20.0663,lobata,lisque,20.1005,NaN,root bag,NaN,SE,"34.69386, 120.04808",,0,89,37/96,0-5,75-95,0-5,5-25
+20.0664,lobata,windmill,20.1013,NaN,root bag,NaN,SW,"34.69773, 120.02877",,0,78,24/96,5-25,50-75,5-25,5-25
+20.0665,lobata,windmill,20.1021,NaN,soils bag,NaN,SE,"34.68820, 120.03612",,2,117.5,7/96,25-50,50-75,5-25,0-5
+20.0666,lobata,windmill,20.1020,NaN,root bag,NaN,SE,"34.68852, 120.03661",,2,151,12/96,25-50,50-75,0-5,5-25
+20.0667,lobata,lisque,20.1004,NaN,root bag,NaN,SW,"34.69393, 120.04800",,0,108,32/96,0-5,25-50,5-25,5-25
+20.0668,lobata,lisque,20.1006,NaN,root bag,NaN,SE,"34.69217, 120.04539",,0,125,33/96,0-5,25-50,25-50,5-25
+20.067,douglasii,transects,20.2002,10,soils bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0671,douglasii,transects,20.2001,18,root bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0672,lobata,lisque,20.1009,NaN,root bag,NaN,N,"34.69104, 120.04308
+",,1,60,27/96,5-25,75-95,5-25,0-5
+20.0673,lobata,lisque,20.1005,NaN,root bag,NaN,N,"34.69386, 120.04808",,0,89,37/96,0-5,75-95,0-5,5-25
+20.0674,lobata,lisque,20.1007,NaN,root bag,NaN,N,"34.69138, 120.04553",,1.5,135,19/96,0-5,50-75,5-25,5-25
+20.0675,douglasii,transects,20.2004,14,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0677,douglasii,transects,20.2001,30,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0678,douglasii,transects,20.2003,28,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0679,douglasii,transects,20.2004,18,root bag,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.068,douglasii,transects,20.2001,20,root bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0681,lobata,windmill,20.1015,NaN,root bag,NaN,SW,"34.69413, 120.03202",,0,88,18/96,0-5,75-95,0-5,0
+20.0684,douglasii,transects,20.2004,12,root bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0685,douglasii,transects,20.2004,20,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0686,lobata,windmill,20.1016,NaN,root bag,NaN,N,"34.69171, 120.03425",,0,139,-,0-5,50-75,0-5,5-25
+20.0687,lobata,windmill,20.1014,NaN,root bag,NaN,SW,"34.69695, 120.02946",,0,107,12/96,0-5,75-95,0,0-5
+20.0688,lobata,windmill,20.1011,NaN,root bag,NaN,SW,"34.69808,120.03066",,0,119,20/96,0,75-95,0-5,0-5
+20.0689,douglasii,transects,20.2004,4,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0689,douglasii,transects,20.2004,6,root bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0691,lobata,lisque,20.1001,NaN,root bag,NaN,SE,"34.69465, 120.04877",,2,97,52/96,5-25,25-50,5-25,0-5
+20.0692,douglasii,transects,20.2004,2,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0693,lobata,windmill,20.1020,NaN,root bag,NaN,SW,"34.68852, 120.03661",,2,151,12/96,25-50,50-75,0-5,5-25
+20.0694,douglasii,transects,20.2002,30,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0695,lobata,windmill,20.1019,NaN,root bag,NaN,N,"34.68854, 120.03613",,1,108,12/96,5-25,50-75,0-5,5-25
+20.0696,douglasii,transects,20.2001,26,root bag,NaN,NaN,NaN,,9,NaN,NaN,NaN,NaN,NaN,NaN
+20.0697,douglasii,transects,20.2002,22,root bag,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0698,douglasii,transects,20.2004,26,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0700,lobata,lisque,20.1002,NaN,root bag,NaN,SE,"34.69437, 120.04824",,1,115,14/96,5-25,25-50,25-50,0-5
+20.0701,lobata,lisque,20.1000,NaN,root bag,NaN,SE,"34.69526, 120.04929",,0,124,35/96,0,75-95,0,0-5
+20.0703,lobata,lisque,20.1008,NaN,root bag,NaN,N,"34.69106, 120.04314",,1,73,39/96,5-25,50-75,25-50,5-25
+20.0704,lobata,windmill,20.1017,NaN,root bag,NaN,N,"34.68888,120.03606",,1,120,22/96,5-25,50-75,0-5,5-25
+20.0705,douglasii,transects,20.2003,30,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0706,lobata,lisque,20.1001,NaN,root bag,NaN,SW,"34.69465, 120.04877",,2,97,52/96,5-25,25-50,5-25,0-5
+20.0707,lobata,windmill,20.1021,NaN,root bag,NaN,SE,"34.68820, 120.03612",,2,117.5,7/96,25-50,50-75,5-25,0-5
+20.0708,lobata,windmill,20.1016,NaN,root bag,NaN,SW,"34.69171, 120.03425",,0,139,-,0-5,50-75,0-5,5-25
+20.0710,lobata,windmill,20.1015,NaN,root bag,NaN,SE,"34.69413, 120.03202",,0,88,18/96,0-5,75-95,0-5,0
+20.0711,lobata,windmill,20.1016,NaN,root bag,NaN,SE,"34.69171, 120.03425",,0,139,-,0-5,50-75,0-5,5-25
+20.0712,lobata,windmill,20.1014,NaN,root bag,NaN,N,"34.69695, 120.02946",,0,107,12/96,0-5,75-95,0,0-5
+20.0713,douglasii,transects,20.2001,10,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0714,lobata,lisque,20.1000,NaN,root bag,NaN,SW,"34.69526, 120.04929",,0,124,35/96,0,75-95,0,0-5
+20.0715,douglasii,transects,20.2002,24,root bag,NaN,NaN,NaN,,2,NaN,NaN,NaN,NaN,NaN,NaN
+20.0716,lobata,lisque,20.1002,NaN,root bag,NaN,N,"34.69437, 120.04824",,1,115,14/96,5-25,25-50,25-50,0-5
+20.0717,lobata,windmill,20.1021,NaN,root bag,NaN,SW,"34.68820, 120.03612",,2,117.5,7/96,25-50,50-75,5-25,0-5
+20.0718,lobata,windmill,20.102,NaN,root bag,NaN,N,"34.68852, 120.03661",,2,151,12/96,25-50,50-75,0-5,5-25
+20.0719,douglasii,transects,20.2001,24,root bag,NaN,NaN,NaN,,3.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.072,douglasii,transects,20.2004,8,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0721,douglasii,transects,20.2002,14,root bag,NaN,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.0723,douglasii,transects,20.2004,0,root bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0725,douglasii,transects,20.2002,2,root bag,NaN,NaN,NaN,,2.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0726,lobata,windmill,20.1018,NaN,root bag,NaN,SW,"34.68893,120.03607",,1,105,6/96,5-25,50-75,0-5,0-5
+20.0727,douglasii,transects,20.2003,10,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0728,douglasii,transects,20.2003,8,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0729,douglasii,transects,20.2001,22,root bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0730,lobata,windmill,20.1017,NaN,root bag,NaN,SW,"34.68888,120.03606",,1,120,22/96,5-25,50-75,0-5,5-25
+20.0731,douglasii,transects,20.2004,10,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0732,lobata,lisque,20.1006,NaN,root bag,NaN,SW,"34.69217, 120.04539",,0,125,33/96,0-5,25-50,25-50,5-25
+20.0733,lobata,windmill,20.1018,NaN,root bag,NaN,N,"34.68893,120.03607",,1,105,6/96,5-25,50-75,0-5,0-5
+20.0734,douglasii,transects,20.2003,2,root bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0736,lobata,lisque,20.1008,NaN,root bag,NaN,SW,"34.69106, 120.04314",,1,73,39/96,5-25,50-75,25-50,5-25
+20.074,douglasii,transects,20.2001,8,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0741,lobata,lisque,20.1004,NaN,root bag,NaN,N,"34.69393, 120.04800",,0,108,32/96,0-5,25-50,5-25,5-25
+20.0742,lobata,lisque,20.1008,NaN,root bag,NaN,SE,"34.69106, 120.04314",,1,73,39/96,5-25,50-75,25-50,5-25
+20.0743,lobata,lisque,20.1007,NaN,root bag,NaN,SW,"34.69138, 120.04553",,1.5,135,19/96,0-5,50-75,5-25,5-25
+20.0745,lobata,lisque,20.1009,NaN,root bag,NaN,SE,"34.69104, 120.04308
+",,1,60,27/96,5-25,75-95,5-25,0-5
+20.0746,douglasii,transects,20.2001,14,root bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0747,douglasii,transects,20.2001,28,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0748,lobata,windmill,20.1011,NaN,root bag,NaN,N,"34.69808,120.03066",,0,119,20/96,0,75-95,0-5,0-5
+20.0749,lobata,lisque,20.1003,NaN,root bag,NaN,SE,"34.69387, 120.04761",,0,108,17/96,0-5,50-75,25-50,5-25
+20.075,douglasii,transects,20.2003,24,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0751,lobata,windmill,20.1013,NaN,root bag,NaN,N,"34.69773, 120.02877",,0,78,24/96,5-25,50-75,5-25,5-25
+20.0752,douglasii,transects,20.2003,26,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0753,lobata,lisque,20.1010,NaN,root bag,NaN,N,"34.69009,120.04433",,1,169,35/96,5-25,50-75,0-5,5-25
+20.0754,douglasii,transects,20.2002,12,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0755,lobata,lisque,20.1004,NaN,root bag,NaN,SE,"34.69393, 120.04800",,0,108,32/96,0-5,25-50,5-25,5-25
+20.0758,douglasii,transects,20.2002,8,root bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0758,lobata,windmill,20.1012,NaN,root bag,NaN,SW,"34.69755, 120.03088",,0,89,42/96,0-5,95-100,0,0-5
+20.0759,douglasii,transects,20.2003,16,root bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.076,lobata,lisque,20.1006,NaN,root bag,NaN,N,"34.69217, 120.04539",,0,125,33/96,0-5,25-50,25-50,5-25
+20.0761,douglasii,transects,20.2003,4,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0761,lobata,windmill,20.1021,NaN,soils bag,NaN,SW,"34.68820, 120.03612",,2,117.5,7/96,25-50,50-75,5-25,0-5
+20.0762,douglasii,transects,20.2003,6,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0764,douglasii,transects,20.2002,20,root bag,NaN,NaN,NaN,,3,NaN,NaN,NaN,NaN,NaN,NaN
+20.0767,douglasii,transects,20.2004,28,root bag,NaN,NaN,NaN,,8,NaN,NaN,NaN,NaN,NaN,NaN
+20.0768,douglasii,transects,20.2001,12,root bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0769,douglasii,transects,20.2003,20,root bag,NaN,NaN,NaN,,4,NaN,NaN,NaN,NaN,NaN,NaN
+20.0771,lobata,lisque,20.1010,NaN,root bag,NaN,SW,"34.69009,120.04433",,1,169,35/96,5-25,50-75,0-5,5-25
+20.0773,lobata,windmill,20.1014,NaN,root bag,NaN,SE,"34.69695, 120.02946",,0,107,12/96,0-5,75-95,0,0-5
+20.0774,douglasii,transects,20.2002,0,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0775,douglasii,transects,20.2003,0,root bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0776,lobata,lisque,20.1009,NaN,root bag,NaN,SW,"34.69104, 120.04308
+",,1,60,27/96,5-25,75-95,5-25,0-5
+20.0777,douglasii,transects,20.2002,26,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0779,douglasii,transects,20.2001,6,root bag,NaN,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0780,lobata,windmill,20.1017,NaN,root bag,NaN,SE,"34.68888,120.03606",,1,120,22/96,5-25,50-75,0-5,5-25
+20.0781,douglasii,transects,20.2002,28,root bag,NaN,NaN,NaN,,<0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0782,lobata,windmill,20.1012,NaN,root bag,NaN,N,"34.69755, 120.03088",,0,89,42/96,0-5,95-100,0,0-5
+20.0783,lobata,windmill,20.1019,NaN,root bag,NaN,SW,"34.68854, 120.03613",,1,108,12/96,5-25,50-75,0-5,5-25
+20.0785,lobata,windmill,20.1019,NaN,root bag,NaN,SE,"34.68854, 120.03613",,1,108,12/96,5-25,50-75,0-5,5-25
+20.0787,lobata,lisque,20.1010,NaN,root bag,NaN,SE,"34.69009,120.04433",,1,169,35/96,5-25,50-75,0-5,5-25
+20.0788,douglasii,transects,20.2002,18,root bag,NaN,NaN,NaN,,5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0789,douglasii,transects,20.2001,2,root bag,NaN,NaN,NaN,,0.5,NaN,NaN,NaN,NaN,NaN,NaN
+20.0790,lobata,windmill,20.1018,NaN,root bag,NaN,SE,"34.68893,120.03607",,1,105,6/96,5-25,50-75,0-5,0-5
+20.0792,douglasii,transects,20.2003,14,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.0793,douglasii,transects,20.2004,30,root bag,NaN,NaN,NaN,,1,NaN,NaN,NaN,NaN,NaN,NaN
+20.0794,lobata,windmill,20.1011,NaN,root bag,NaN,SE,"34.69808,120.03066",,0,119,20/96,0,75-95,0-5,0-5
+20.0795,lobata,lisque,20.1007,NaN,root bag,NaN,SE,"34.69138, 120.04553",,1.5,135,19/96,0-5,50-75,5-25,5-25
+20.0796,lobata,lisque,20.1002,NaN,root bag,NaN,SW,"34.69437, 120.04824",,1,115,14/96,5-25,25-50,25-50,0-5
+20.0798,lobata,lisque,20.1001,NaN,root bag,NaN,N,"34.69465, 120.04877",,2,97,52/96,5-25,25-50,5-25,0-5
+20.0799,douglasii,transects,20.2004,24,root bag,NaN,NaN,NaN,,6,NaN,NaN,NaN,NaN,NaN,NaN
+20.08,douglasii,transects,20.2003,18,root bag,NaN,NaN,NaN,,0.25,NaN,NaN,NaN,NaN,NaN,NaN
+20.1000,lobata,lisque,20.1000,NaN,tree,NaN,NaN,"34.69526, 120.04929",,0,124,35/96,0,75-95,0,0-5
+20.1001,lobata,lisque,20.1001,NaN,tree,NaN,NaN,"34.69465, 120.04877",,2,97,52/96,5-25,25-50,5-25,0-5
+20.1002,lobata,lisque,20.1002,NaN,tree,NaN,NaN,"34.69437, 120.04824",,1,115,14/96,5-25,25-50,25-50,0-5
+20.1003,lobata,lisque,20.1003,NaN,tree,NaN,NaN,"34.69387, 120.04761",,0,108,17/96,0-5,50-75,25-50,5-25
+20.1004,lobata,lisque,20.1004,NaN,tree,NaN,NaN,"34.69393, 120.04800",,0,108,32/96,0-5,25-50,5-25,5-25
+20.1005,lobata,lisque,20.1005,NaN,tree,NaN,NaN,"34.69386, 120.04808",,0,89,37/96,0-5,75-95,0-5,5-25
+20.1006,lobata,lisque,20.1006,NaN,tree,NaN,NaN,"34.69217, 120.04539",,0,125,33/96,0-5,25-50,25-50,5-25
+20.1007,lobata,lisque,20.1007,NaN,tree,NaN,NaN,"34.69138, 120.04553",,1.5,135,19/96,0-5,50-75,5-25,5-25
+20.1008,lobata,lisque,20.1008,NaN,tree,NaN,NaN,"34.69106, 120.04314",,1,73,39/96,5-25,50-75,25-50,5-25
+20.1009,lobata,lisque,20.1009,NaN,tree,NaN,NaN,"34.69104, 120.04308
+",,1,60,27/96,5-25,75-95,5-25,0-5
+20.1010,lobata,lisque,20.1010,NaN,tree,NaN,NaN,"34.69009,120.04433",,1,169,35/96,5-25,50-75,0-5,5-25
+20.1011,lobata,windmill,20.1011,NaN,tree,NaN,NaN,"34.69808,120.03066",,0,119,20/96,0,75-95,0-5,0-5
+20.1012,lobata,windmill,20.1012,NaN,tree,NaN,NaN,"34.69755, 120.03088",,0,89,42/96,0-5,95-100,0,0-5
+20.1013,lobata,windmill,20.1013,NaN,tree,NaN,NaN,"34.69773, 120.02877",,0,78,24/96,5-25,50-75,5-25,5-25
+20.1014,lobata,windmill,20.1014,NaN,tree,NaN,NaN,"34.69695, 120.02946",,0,107,12/96,0-5,75-95,0,0-5
+20.1015,lobata,windmill,20.1015,NaN,tree,NaN,NaN,"34.69413, 120.03202",,0,88,18/96,0-5,75-95,0-5,0
+20.1016,lobata,windmill,20.1016,NaN,tree,NaN,NaN,"34.69171, 120.03425",,0,139,-,0-5,50-75,0-5,5-25
+20.1017,lobata,windmill,20.1017,NaN,tree,NaN,NaN,"34.68888,120.03606",,1,120,22/96,5-25,50-75,0-5,5-25
+20.1018,lobata,windmill,20.1018,NaN,tree,NaN,NaN,"34.68893,120.03607",,1,105,6/96,5-25,50-75,0-5,0-5
+20.1019,lobata,windmill,20.1019,NaN,tree,NaN,NaN,"34.68854, 120.03613",,1,108,12/96,5-25,50-75,0-5,5-25
+20.1020,lobata,windmill,20.1020,NaN,tree,NaN,NaN,"34.68852, 120.03661",,2,151,12/96,25-50,50-75,0-5,5-25
+20.1021,lobata,windmill,20.1021,NaN,tree,NaN,NaN,"34.68820, 120.03612",,2,117.5,7/96,25-50,50-75,5-25,0-5
+20.2001,douglasii,transects,20.2001,NaN,transect,NaN,NaN,"34.73695,120.05782","34.73701,120.05763",NaN,NaN,NaN,NaN,NaN,NaN,NaN
+20.2002,douglasii,transects,20.2002,NaN,transect,NaN,NaN,"34.73671,120.05804","34.73653,120.05788",NaN,NaN,NaN,NaN,NaN,NaN,NaN
+20.2003,douglasii,transects,20.2003,NaN,transect,NaN,NaN,"34.73617,120.05844","34.73592,120.05845",NaN,NaN,NaN,NaN,NaN,NaN,NaN
+20.2004,douglasii,transects,20.2004,NaN,transect,NaN,NaN,"34.73746,120.05889","34.73730,120.05881",NaN,NaN,NaN,NaN,NaN,NaN,NaN
+20.331,douglasii,transects,20.2001,6,tube_2,1.63,NaN,NaN,,1.5,NaN,NaN,NaN,NaN,NaN,NaN

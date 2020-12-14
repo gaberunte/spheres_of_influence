@@ -1,0 +1,81 @@
+---
+title: "Untitled"
+author: "Gabe Runte"
+date: "10/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(tidyverse)
+library(phyloseq)
+library(here)
+library(janitor)
+library(DECIPHER)
+library(dada2)
+```
+
+```{r create OTUs,  include=FALSE}
+nproc <- 4 # set to number of cpus/processors to use for the clustering
+unite.tab <- read_csv(here("data/forward", "unite_sedgwick_forward.csv"))
+seqtab <- t(asv.tab)
+colnames(seqtab)<- unite.tab$X1
+
+asv_sequences <- colnames(seqtab)
+sample_names <- rownames(seqtab)
+dna <- Biostrings::DNAStringSet(asv_sequences)
+
+## Find clusters of ASVs to form the new OTUs
+aln <- DECIPHER::AlignSeqs(dna, processors = nproc)
+d <- DECIPHER::DistanceMatrix(aln, processors = nproc)
+clusters <- DECIPHER::IdClusters(
+  d, 
+  method = "complete",
+  cutoff = 0.03, # use `cutoff = 0.03` for a 97% OTU 
+  processors = nproc)
+
+## Use dplyr to merge the columns of the seqtab matrix for ASVs in the same OTU
+# prep by adding sequences to the `clusters` data frame
+clusters <- clusters %>%
+  add_column(sequence = asv_sequences)
+merged_seqtab <- seqtab %>%
+  # setup: turn seqtab into a tibble with rows = ASVs and columns = samples
+  t %>%
+  as_tibble(rownames = "sequence") %>%
+  # add the cluster information
+  left_join(clusters, by = "sequence") %>%
+  # merge ASVs in the same cluster, summing abundances within samples
+  group_by(cluster) %>%
+  summarize_at(vars(-sequence), sum) %>%
+  # Set new taxa names to OTU<cluster #> 
+  mutate(cluster = paste0("OTU", cluster)) %>%
+  # convert back to a matrix in the original orientation
+  column_to_rownames("cluster") %>%
+  as("matrix") %>%
+  t
+
+write.csv(merged_seqtab, file= "otu_tab.csv")
+```
+
+```{r}
+otu.tab <- read_csv(here("data/forward", "otu_tab.csv"))
+otu.tab <- t(otu.tab)
+colnames(otu.tab)<- otu.tab[1,]
+otu.tab <- otu.tab[-1,]
+
+write.csv(otu.tab, file= "otu_tab_cleaned.csv")
+```
+
+```{r}
+unite.ref <- "/Volumes/Gabe_Runte_EHD/unite_db/sh_general_release_s_04.02.2020/sh_general_release_dynamic_s_04.02.2020.fasta"
+seqs <- as.vector(clusters$sequence)
+taxa <- assignTaxonomy(seqs, unite.ref, multithread = TRUE, tryRC = TRUE)
+write.csv(taxa, "unite_sedgwick_otus.csv")
+taxa$sequence <- rownames(taxa)
+
+otu_taxa <- clusters %>% 
+  full_join(taxa)
+
+```
+

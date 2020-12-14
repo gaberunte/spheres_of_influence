@@ -1,0 +1,1825 @@
+---
+title: "OTU goodness"
+author: "Gabe Runte"
+date: "10/5/2020"
+output: html_document
+---
+#Libraries
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(tidyverse)
+library(phyloseq)
+library(pastecs)
+library(pander)
+library(metagenomeSeq)
+library(vegan)
+library(here)
+library(janitor)
+library(nationalparkcolors)
+library(stats)
+library(ggpubr)
+library(gridExtra)
+library(rstatix)
+library(viridis)
+library(magick)
+library(DESeq2)
+library(dendextend)
+library(viridis)
+library(reshape)
+library(lme4)
+library(emmeans)
+library(lmerTest)
+library(aod)
+library(gdm)
+```
+
+#Datasets
+```{r datasets, message=FALSE, warning=FALSE}
+#reading in data
+taxon.path <- read_csv(here('data/forward', 'otu_taxon_path.csv')) # taxon path output from UNITE
+taxon.path <- taxon.path %>% 
+  clean_names() 
+
+funguilds <- read_csv(here('data/forward','otu_taxon_path_for_funguild.guilds.csv')) # guild data output from FUNGuild
+funguilds <- funguilds %>% 
+  clean_names() %>% 
+ dplyr::select(sequence, taxon, trophic_mode, guild, growth_morphology, confidence_ranking)
+ 
+asv.tab <- read_csv(here('data/forward','otu_tab.csv')) # otu table output from DADA2 and downstream
+asv.tab <- t(asv.tab)
+colnames(asv.tab) <- asv.tab[1,]
+asv.tab <- asv.tab[-1,]
+
+sedg.coord <- read_csv(here("data", "sedgwick_coordinate_data.csv")) %>% 
+  clean_names() %>% 
+  mutate(long = -long)
+```
+
+```{r site env data files, warning=FALSE, message=FALSE}
+all.sites <- read_csv(here("data", "sedgwick_id_master_updated.csv")); all.sites <- all.sites[!is.na(all.sites$dist_along_transect),]
+colnames(all.sites)[1] <- "sample_id"
+all.sites <- all.sites %>% 
+  clean_names()
+all.sites$point <- paste(all.sites$site_tree_id_transect_id, all.sites$dist_along_transect, sep = ".")
+
+neighbor.data <- read_csv(here("data", 'sedgwick_percent_site.csv')) #can change to input range w different csv
+neighbor.data$point <- paste(neighbor.data$Transect_ID, neighbor.data$Position_along_transect_m, sep = ".")
+colnames(neighbor.data)[5] <- "sample_id"
+neighbor.data <- neighbor.data %>% 
+  clean_names() %>% 
+  dplyr::select(!x1)
+
+soil.cn <- read_csv(here('data', 'soil_cn.csv')) # soil carbon:nitrogen data
+soil.cn <- soil.cn %>% 
+  clean_names() %>% 
+  dplyr::select(!lab_number)
+colnames(soil.cn)[2] <- "sample_id"
+soil.cn$sample_location <- sub("-", ".", soil.cn$sample_location)
+
+soil.nutr <- read_csv(here('data', 'soil_nutrients.csv')) # soil nutrient data    
+soil.nutr <- soil.nutr %>% 
+  clean_names() %>% 
+  dplyr::select(!lab_number)
+colnames(soil.nutr)[2] <- "sample_id"
+soil.nutr$sample_location <- sub("-", ".", soil.nutr$sample_location)
+
+```
+
+```{r merge soils and site data}
+soil.cn.point <- soil.cn %>% 
+  left_join(dplyr::select(all.sites, point, sample_id), by= "sample_id")
+
+soil.nutr.point <- soil.nutr %>% 
+  left_join(dplyr::select(all.sites, point, sample_id), by= "sample_id")
+
+all.sites.cn <- all.sites %>% 
+  left_join(soil.cn.point, by="point")
+
+all.sites.soils <- all.sites.cn %>% 
+  left_join(soil.nutr.point, by="point")
+  #colnames(all.sites.soils)[1] <- "sample_id"
+```
+
+```{r merge and prep data, message=FALSE, warning=FALSE}
+#join above dataframes to make on with asv table and taxa and one with that and guild data
+path.guilds <- taxon.path %>% 
+  full_join(funguilds) %>% 
+  mutate()
+asv.tab.tib <- as.tibble(asv.tab) 
+
+asv.total <- asv.tab.tib %>% 
+  bind_cols(path.guilds[1:length(asv.tab[,1]),])
+  rownames(asv.total) <- rownames(asv.tab)
+
+```
+
+
+```{r prep final metadata file for phyloseq}
+metadata <- left_join(all.sites.soils, neighbor.data, by=c("point")) #combining two metadata dataframes
+names(metadata) <- sub(".x", "", names(metadata))
+
+metadata <- metadata %>% #dplyr::selecting only relevant columns for cleanliness
+  dplyr::select(sample_id, site_tree_id_transect_id, dist_along_transect, litter_depth_cm, point,
+         carbon_percent:c_n_ratio, total_change_capacity_meq_100_g:al_mg_kg, percent_soil_moisture, quag, qudo, pisa, ceanothus, total)
+
+#creating duplicates of each metadata row for DNA and RNA samples, extracted from same soil core
+metadata$sample_id <- format(metadata$sample_id, digits =6)
+soil.dna <- metadata; soil.dna$seq_sample = paste(soil.dna$sample_id,".DNA", sep="")
+soil.rna <- metadata; soil.rna$seq_sample = paste(soil.rna$sample_id,".RNA", sep="")
+sample_table <-bind_rows(soil.dna, soil.rna)
+```
+
+
+```{r sample tables for phyloseq}
+#adding some varaibles to all
+sample_table$qudo.rescaled <- sample_table$qudo/max(sample_table$qudo)
+sample_table$quag.rescaled <- sample_table$quag/max(sample_table$quag)
+sample_table$oak <- sample_table$quag + sample_table$qudo
+sample_table$oaks.rescaled <- sample_table$oak/max(sample_table$oak)
+sample_table$pisa.rescaled <- sample_table$pisa/max(sample_table$pisa)
+sample_table$cover <- sample_table$oaks.rescaled - sample_table$pisa.rescaled
+sample_table$total.neighbors.rescaled <- sample_table$total/max(sample_table$total)
+sample_table$transect <- recode(sample_table$site_tree_id_transect_id, 
+                                "20.2001" = "t1", "20.2002" = "t2", "20.2003" = "t3", "20.2004" = "t4")
+sample_table <- sample_table[!is.na(sample_table$p_h),] #needed for some adonis analyses
+sample_table <- sample_table[!duplicated(sample_table$seq_sample),]
+rownames(sample_table)<- sample_table$seq_sample
+
+```
+
+
+##Subsetting by FUNGuild confidence ranking. Taking only higher confidence assignments into asv.assigned
+```{r subsetting data, warning=FALSE, message=FALSE}
+probable.guild <- asv.total %>% 
+  filter(confidence_ranking == "Probable") 
+highlyprobable.guild <- asv.total %>% 
+  filter(confidence_ranking == "Highly Probable")
+asv.conf <- bind_rows(probable.guild, highlyprobable.guild)
+
+asv.tab.conf <- asv.conf[,1:121] #subsetting to just columns containining numerical ASV values
+
+asv.conf.sym <- asv.conf %>% #filter by any trophic mode containing 'symbiotroph"
+  dplyr::filter(grepl("Symbiotroph",trophic_mode))
+asv.total.sym <- asv.total %>% #filter by any trophic mode containing 'symbiotroph"
+  dplyr::filter(grepl("Symbiotroph",trophic_mode))
+asv.conf.ect <- asv.conf %>% #filter by any guild assignment containing 'Ectomycorrhizal'
+  dplyr::filter(grepl("Ectomycorrhizal",guild))
+asv.total.ect <- asv.total %>% #filter by any guild assignment containing 'Ectomycorrhizal'
+  dplyr::filter(grepl("Ectomycorrhizal",guild))
+asv.conf.sap <- asv.conf %>% #filter by any guild assignment containing 'Ectomycorrhizal'
+  dplyr::filter(grepl("Saprotroph",guild))
+asv.total.sap <- asv.total %>% #filter by any guild assignment containing 'Ectomycorrhizal'
+  dplyr::filter(grepl("Saprotroph",guild))
+
+#subsetting to just rows containining numerical ASV values
+asv.tab.conf.sym <- asv.conf.sym[,1:123]; rownames(asv.tab.conf.sym) <- rownames(asv.conf.sym)
+asv.tab.total.sym <- asv.total.sym[,1:123] ; rownames(asv.tab.total.sym) <- rownames(asv.total.sym)
+asv.tab.conf.ect <- asv.conf.ect[,1:123]; rownames(asv.tab.conf.ect) <- rownames(asv.conf.ect)
+asv.tab.total.ect <- asv.total.ect[,1:123]; rownames(asv.tab.total.ect) <- rownames(asv.total.ect)
+asv.tab.conf.sap <- asv.conf.sap[,1:123]; rownames(asv.tab.conf.sap) <- rownames(asv.conf.sap)
+asv.tab.total.sap <- asv.total.sap[,1:123]; rownames(asv.tab.total.sap) <- rownames(asv.total.sap)
+
+```
+
+
+##loading asv/otu table and changing sample name format 
+```{r prepare OTU tables}
+OTU_table_all <- data.matrix(as.tibble(asv.tab))
+OTU_table_all <- OTU_table_all[,-c(5:6)]
+OTU_table_sym <- data.matrix(asv.tab.conf.sym)
+OTU_table_sym <- OTU_table_sym[,-c(5:6)]
+OTU_table_ect <- data.matrix(asv.tab.conf.ect)
+OTU_table_ect <- OTU_table_ect[,-c(5:6)]
+OTU_table_sap <- data.matrix(asv.tab.conf.sap)
+OTU_table_sap <- OTU_table_sap[,-c(5:6)]
+
+#subset to samples with >500 reads 
+OTU_sums_all <- colSums(OTU_table_all)
+OTU_sums_sym <- colSums(OTU_table_sym)
+OTU_sums_ect <- colSums(OTU_table_ect)
+OTU_sums_sap <- colSums(OTU_table_sap)
+
+otu_500_all <- OTU_sums_all>500
+otu_500_sym <- OTU_sums_sym>500
+otu_500_ect <- OTU_sums_ect>500
+otu_500_sap <- OTU_sums_sap>500
+
+OTU_table_all <- OTU_table_all[,otu_500_all]
+OTU_table_sym <- OTU_table_sym[,otu_500_sym]
+OTU_table_ect <- OTU_table_ect[,otu_500_ect]
+OTU_table_sap <- OTU_table_sap[,otu_500_sap]
+
+OTU_table_all <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(sample_table))]
+OTU_table_sym <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(sample_table))]
+OTU_table_ect <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(sample_table))]
+OTU_table_sap <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(sample_table))]
+
+OTU_tab_all<-otu_table(OTU_table_all, taxa_are_rows = TRUE)
+OTU_tab_sym<-otu_table(OTU_table_sym, taxa_are_rows = TRUE)
+OTU_tab_ect<-otu_table(OTU_table_ect, taxa_are_rows = TRUE)
+OTU_tab_sap<-otu_table(OTU_table_sap, taxa_are_rows = TRUE)
+```
+
+Sample table creation below. Names are of the organization "sampletable.subset.transect.nucleicacid" such that a sample table from
+subset "ect" for ectomycorrhizae, transect "2", and combining "b" for both nucleic acid types would be labeled "st.ect.2.b". I know this is long and tricky, but if i made it more clear the table names would be very long. 
+
+```{r create all sample tables, warning = FALSE}
+sample_table_all <- sample_table[which(sample_table$seq_sample %in% colnames(OTU_table_all)),]
+sample_table_sym <- sample_table[which(sample_table$seq_sample %in% colnames(OTU_table_sym)),]
+sample_table_ect <- sample_table[which(sample_table$seq_sample %in% colnames(OTU_table_ect)),]
+sample_table_sap <- sample_table[which(sample_table$seq_sample %in% colnames(OTU_table_sap)),]
+
+st.all.0.b <- sample_table[which(sample_table$seq_sample %in% colnames(OTU_table_all)),]
+rownames(st.all.0.b) <- st.all.0.b$seq_sample
+st.sym.0.b <- sample_table[which(sample_table$seq_sample %in% colnames(OTU_table_sym)),]
+rownames(st.sym.0.b) <- st.sym.0.b$seq_sample
+st.ect.0.b <- sample_table[which(sample_table$seq_sample %in% colnames(OTU_table_ect)),]
+rownames(st.ect.0.b) <- st.ect.0.b$seq_sample
+st.sap.0.b <- sample_table[which(sample_table$seq_sample %in% colnames(OTU_table_sap)),]
+rownames(st.sap.0.b) <- st.sap.0.b$seq_sample
+
+st.all.1.b <- st.all.0.b[st.all.0.b$transect=="t1",]; rownames(st.all.1.b) <- st.all.1.b$seq_sample
+st.all.2.b <- st.all.0.b[st.all.0.b$transect=="t2",]; rownames(st.all.2.b) <- st.all.2.b$seq_sample
+st.all.3.b <- st.all.0.b[st.all.0.b$transect=="t3",]; rownames(st.all.3.b) <- st.all.3.b$seq_sample
+st.all.4.b <- st.all.0.b[st.all.0.b$transect=="t4",]; rownames(st.all.4.b) <- st.all.4.b$seq_sample
+st.sym.1.b <- st.sym.0.b[st.sym.0.b$transect=="t1",]; rownames(st.sym.1.b) <- st.sym.1.b$seq_sample
+st.sym.2.b <- st.sym.0.b[st.sym.0.b$transect=="t2",]; rownames(st.sym.2.b) <- st.sym.2.b$seq_sample
+st.sym.3.b <- st.sym.0.b[st.sym.0.b$transect=="t3",]; rownames(st.sym.3.b) <- st.sym.3.b$seq_sample
+st.sym.4.b <- st.sym.0.b[st.sym.0.b$transect=="t4",]; rownames(st.sym.4.b) <- st.sym.4.b$seq_sample
+st.ect.1.b <- st.ect.0.b[st.ect.0.b$transect=="t1",]; rownames(st.ect.1.b) <- st.ect.1.b$seq_sample
+st.ect.2.b <- st.ect.0.b[st.ect.0.b$transect=="t2",]; rownames(st.ect.2.b) <- st.ect.2.b$seq_sample
+st.ect.3.b <- st.ect.0.b[st.ect.0.b$transect=="t3",]; rownames(st.ect.3.b) <- st.ect.3.b$seq_sample
+st.ect.4.b <- st.ect.0.b[st.ect.0.b$transect=="t4",]; rownames(st.ect.4.b) <- st.ect.4.b$seq_sample
+st.sap.1.b <- st.sap.0.b[st.sap.0.b$transect=="t1",]; rownames(st.sap.1.b) <- st.sap.1.b$seq_sample
+st.sap.2.b <- st.sap.0.b[st.sap.0.b$transect=="t2",]; rownames(st.sap.2.b) <- st.sap.2.b$seq_sample
+st.sap.3.b <- st.sap.0.b[st.sap.0.b$transect=="t3",]; rownames(st.sap.3.b) <- st.sap.3.b$seq_sample
+st.sap.4.b <- st.sap.0.b[st.sap.0.b$transect=="t4",]; rownames(st.sap.4.b) <- st.sap.4.b$seq_sample
+
+st.all.0.r <- st.all.0.b[grepl("RNA", rownames(st.all.0.b)),]; rownames(st.all.0.r) <- st.all.0.r$seq_sample
+st.all.1.r <- st.all.1.b[grepl("RNA", rownames(st.all.1.b)),]; rownames(st.all.1.r) <- st.all.1.r$seq_sample
+st.all.2.r <- st.all.2.b[grepl("RNA", rownames(st.all.2.b)),]; rownames(st.all.2.r) <- st.all.2.r$seq_sample
+st.all.3.r <- st.all.3.b[grepl("RNA", rownames(st.all.3.b)),]; rownames(st.all.3.r) <- st.all.3.r$seq_sample
+st.all.4.r <- st.all.4.b[grepl("RNA", rownames(st.all.4.b)),]; rownames(st.all.4.r) <- st.all.4.r$seq_sample
+st.sym.0.r <- st.sym.0.b[grepl("RNA", rownames(st.sym.0.b)),]; rownames(st.sym.0.r) <- st.sym.0.r$seq_sample
+st.sym.1.r <- st.sym.1.b[grepl("RNA", rownames(st.sym.1.b)),]; rownames(st.sym.1.r) <- st.sym.1.r$seq_sample
+st.sym.2.r <- st.sym.2.b[grepl("RNA", rownames(st.sym.2.b)),]; rownames(st.sym.2.r) <- st.sym.2.r$seq_sample
+st.sym.3.r <- st.sym.3.b[grepl("RNA", rownames(st.sym.3.b)),]; rownames(st.sym.3.r) <- st.sym.3.r$seq_sample
+st.sym.4.r <- st.sym.4.b[grepl("RNA", rownames(st.sym.4.b)),]; rownames(st.sym.4.r) <- st.sym.4.r$seq_sample
+st.ect.0.r <- st.ect.0.b[grepl("RNA", rownames(st.ect.0.b)),]; rownames(st.ect.0.r) <- st.ect.0.r$seq_sample
+st.ect.1.r <- st.ect.1.b[grepl("RNA", rownames(st.ect.1.b)),]; rownames(st.ect.1.r) <- st.ect.1.r$seq_sample
+st.ect.2.r <- st.ect.2.b[grepl("RNA", rownames(st.ect.2.b)),]; rownames(st.ect.2.r) <- st.ect.2.r$seq_sample
+st.ect.3.r <- st.ect.3.b[grepl("RNA", rownames(st.ect.3.b)),]; rownames(st.ect.3.r) <- st.ect.3.r$seq_sample
+st.ect.4.r <- st.ect.4.b[grepl("RNA", rownames(st.ect.4.b)),]; rownames(st.ect.4.r) <- st.ect.4.r$seq_sample
+st.sap.0.r <- st.sap.0.b[grepl("RNA", rownames(st.sap.0.b)),]; rownames(st.sap.0.r) <- st.sap.0.r$seq_sample
+st.sap.1.r <- st.sap.1.b[grepl("RNA", rownames(st.sap.1.b)),]; rownames(st.sap.1.r) <- st.sap.1.r$seq_sample
+st.sap.2.r <- st.sap.2.b[grepl("RNA", rownames(st.sap.2.b)),]; rownames(st.sap.2.r) <- st.sap.2.r$seq_sample
+st.sap.3.r <- st.sap.3.b[grepl("RNA", rownames(st.sap.3.b)),]; rownames(st.sap.3.r) <- st.sap.3.r$seq_sample
+st.sap.4.r <- st.sap.4.b[grepl("RNA", rownames(st.sap.4.b)),]; rownames(st.sap.4.r) <- st.sap.4.r$seq_sample
+
+st.all.0.d <- st.all.0.b[grepl("DNA", rownames(st.all.0.b)),]; rownames(st.all.0.d) <- st.all.0.d$seq_sample
+st.all.1.d <- st.all.1.b[grepl("DNA", rownames(st.all.1.b)),]; rownames(st.all.1.d) <- st.all.1.d$seq_sample
+st.all.2.d <- st.all.2.b[grepl("DNA", rownames(st.all.2.b)),]; rownames(st.all.2.d) <- st.all.2.d$seq_sample
+st.all.3.d <- st.all.3.b[grepl("DNA", rownames(st.all.3.b)),]; rownames(st.all.3.d) <- st.all.3.d$seq_sample
+st.all.4.d <- st.all.4.b[grepl("DNA", rownames(st.all.4.b)),]; rownames(st.all.4.d) <- st.all.4.d$seq_sample
+st.sym.0.d <- st.sym.0.b[grepl("DNA", rownames(st.sym.0.b)),]; rownames(st.sym.0.d) <- st.sym.0.d$seq_sample
+st.sym.1.d <- st.sym.1.b[grepl("DNA", rownames(st.sym.1.b)),]; rownames(st.sym.1.d) <- st.sym.1.d$seq_sample
+st.sym.2.d <- st.sym.2.b[grepl("DNA", rownames(st.sym.2.b)),]; rownames(st.sym.2.d) <- st.sym.2.d$seq_sample
+st.sym.3.d <- st.sym.3.b[grepl("DNA", rownames(st.sym.3.b)),]; rownames(st.sym.3.d) <- st.sym.3.d$seq_sample
+st.sym.4.d <- st.sym.4.b[grepl("DNA", rownames(st.sym.4.b)),]; rownames(st.sym.4.d) <- st.sym.4.d$seq_sample
+st.ect.0.d <- st.ect.0.b[grepl("DNA", rownames(st.ect.0.b)),]; rownames(st.ect.0.d) <- st.ect.0.d$seq_sample
+st.ect.1.d <- st.ect.1.b[grepl("DNA", rownames(st.ect.1.b)),]; rownames(st.ect.1.d) <- st.ect.1.d$seq_sample
+st.ect.2.d <- st.ect.2.b[grepl("DNA", rownames(st.ect.2.b)),]; rownames(st.ect.2.d) <- st.ect.2.d$seq_sample
+st.ect.3.d <- st.ect.3.b[grepl("DNA", rownames(st.ect.3.b)),]; rownames(st.ect.3.d) <- st.ect.3.d$seq_sample
+st.ect.4.d <- st.ect.4.b[grepl("DNA", rownames(st.ect.4.b)),]; rownames(st.ect.4.d) <- st.ect.4.d$seq_sample
+st.sap.0.d <- st.sap.0.b[grepl("DNA", rownames(st.sap.0.b)),]; rownames(st.sap.0.d) <- st.sap.0.d$seq_sample
+st.sap.1.d <- st.sap.1.b[grepl("DNA", rownames(st.sap.1.b)),]; rownames(st.sap.1.d) <- st.sap.1.d$seq_sample
+st.sap.2.d <- st.sap.2.b[grepl("DNA", rownames(st.sap.2.b)),]; rownames(st.sap.2.d) <- st.sap.2.d$seq_sample
+st.sap.3.d <- st.sap.3.b[grepl("DNA", rownames(st.sap.3.b)),]; rownames(st.sap.3.d) <- st.sap.3.d$seq_sample
+st.sap.4.d <- st.sap.4.b[grepl("DNA", rownames(st.sap.4.b)),]; rownames(st.sap.4.d) <- st.sap.4.d$seq_sample
+
+```
+
+```{r make phyloseq sample data}
+physt.all.0.b <- sample_data(st.all.0.b); sample_names(physt.all.0.b) <- st.all.0.b$seq_sample
+physt.all.1.b <- sample_data(st.all.1.b); sample_names(physt.all.1.b) <- st.all.1.b$seq_sample
+physt.all.2.b <- sample_data(st.all.2.b); sample_names(physt.all.2.b) <- st.all.2.b$seq_sample
+physt.all.3.b <- sample_data(st.all.3.b); sample_names(physt.all.3.b) <- st.all.3.b$seq_sample
+physt.all.4.b <- sample_data(st.all.4.b); sample_names(physt.all.4.b) <- st.all.4.b$seq_sample
+physt.all.0.r <- sample_data(st.all.0.r); sample_names(physt.all.0.r) <- st.all.0.r$seq_sample
+physt.all.1.r <- sample_data(st.all.1.r); sample_names(physt.all.1.r) <- st.all.1.r$seq_sample
+physt.all.2.r <- sample_data(st.all.2.r); sample_names(physt.all.2.r) <- st.all.2.r$seq_sample
+physt.all.3.r <- sample_data(st.all.3.r); sample_names(physt.all.3.r) <- st.all.3.r$seq_sample
+physt.all.4.r <- sample_data(st.all.4.r); sample_names(physt.all.4.r) <- st.all.4.r$seq_sample
+physt.all.0.d <- sample_data(st.all.0.d); sample_names(physt.all.0.d) <- st.all.0.d$seq_sample
+physt.all.1.d <- sample_data(st.all.1.d); sample_names(physt.all.1.d) <- st.all.1.d$seq_sample
+physt.all.2.d <- sample_data(st.all.2.d); sample_names(physt.all.2.d) <- st.all.2.d$seq_sample
+physt.all.3.d <- sample_data(st.all.3.d); sample_names(physt.all.3.d) <- st.all.3.d$seq_sample
+physt.all.4.d <- sample_data(st.all.4.d); sample_names(physt.all.4.d) <- st.all.4.d$seq_sample
+physt.all.0.d <- sample_data(st.all.0.d); sample_names(physt.all.0.d) <- st.all.0.d$seq_sample
+physt.all.1.d <- sample_data(st.all.1.d); sample_names(physt.all.1.d) <- st.all.1.d$seq_sample
+physt.all.2.d <- sample_data(st.all.2.d); sample_names(physt.all.2.d) <- st.all.2.d$seq_sample
+physt.all.3.d <- sample_data(st.all.3.d); sample_names(physt.all.3.d) <- st.all.3.d$seq_sample
+physt.all.4.d <- sample_data(st.all.4.d); sample_names(physt.all.4.d) <- st.all.4.d$seq_sample
+
+physt.sym.0.b <- sample_data(st.sym.0.b); sample_names(physt.sym.0.b) <- st.sym.0.b$seq_sample
+physt.sym.1.b <- sample_data(st.sym.1.b); sample_names(physt.sym.1.b) <- st.sym.1.b$seq_sample
+physt.sym.2.b <- sample_data(st.sym.2.b); sample_names(physt.sym.2.b) <- st.sym.2.b$seq_sample
+physt.sym.3.b <- sample_data(st.sym.3.b); sample_names(physt.sym.3.b) <- st.sym.3.b$seq_sample
+physt.sym.4.b <- sample_data(st.sym.4.b); sample_names(physt.sym.4.b) <- st.sym.4.b$seq_sample
+physt.sym.0.r <- sample_data(st.sym.0.r); sample_names(physt.sym.0.r) <- st.sym.0.r$seq_sample
+physt.sym.1.r <- sample_data(st.sym.1.r); sample_names(physt.sym.1.r) <- st.sym.1.r$seq_sample
+physt.sym.2.r <- sample_data(st.sym.2.r); sample_names(physt.sym.2.r) <- st.sym.2.r$seq_sample
+physt.sym.3.r <- sample_data(st.sym.3.r); sample_names(physt.sym.3.r) <- st.sym.3.r$seq_sample
+physt.sym.4.r <- sample_data(st.sym.4.r); sample_names(physt.sym.4.r) <- st.sym.4.r$seq_sample
+physt.sym.0.d <- sample_data(st.sym.0.d); sample_names(physt.sym.0.d) <- st.sym.0.d$seq_sample
+physt.sym.1.d <- sample_data(st.sym.1.d); sample_names(physt.sym.1.d) <- st.sym.1.d$seq_sample
+physt.sym.2.d <- sample_data(st.sym.2.d); sample_names(physt.sym.2.d) <- st.sym.2.d$seq_sample
+physt.sym.3.d <- sample_data(st.sym.3.d); sample_names(physt.sym.3.d) <- st.sym.3.d$seq_sample
+physt.sym.4.d <- sample_data(st.sym.4.d); sample_names(physt.sym.4.d) <- st.sym.4.d$seq_sample
+
+physt.ect.0.b <- sample_data(st.ect.0.b); sample_names(physt.ect.0.b) <- st.ect.0.b$seq_sample
+physt.ect.1.b <- sample_data(st.ect.1.b); sample_names(physt.ect.1.b) <- st.ect.1.b$seq_sample
+physt.ect.2.b <- sample_data(st.ect.2.b); sample_names(physt.ect.2.b) <- st.ect.2.b$seq_sample
+physt.ect.3.b <- sample_data(st.ect.3.b); sample_names(physt.ect.3.b) <- st.ect.3.b$seq_sample
+physt.ect.4.b <- sample_data(st.ect.4.b); sample_names(physt.ect.4.b) <- st.ect.4.b$seq_sample
+physt.ect.0.r <- sample_data(st.ect.0.r); sample_names(physt.ect.0.r) <- st.ect.0.r$seq_sample
+physt.ect.1.r <- sample_data(st.ect.1.r); sample_names(physt.ect.1.r) <- st.ect.1.r$seq_sample
+physt.ect.2.r <- sample_data(st.ect.2.r); sample_names(physt.ect.2.r) <- st.ect.2.r$seq_sample
+physt.ect.3.r <- sample_data(st.ect.3.r); sample_names(physt.ect.3.r) <- st.ect.3.r$seq_sample
+physt.ect.4.r <- sample_data(st.ect.4.r); sample_names(physt.ect.4.r) <- st.ect.4.r$seq_sample
+physt.ect.0.d <- sample_data(st.ect.0.d); sample_names(physt.ect.0.d) <- st.ect.0.d$seq_sample
+physt.ect.1.d <- sample_data(st.ect.1.d); sample_names(physt.ect.1.d) <- st.ect.1.d$seq_sample
+physt.ect.2.d <- sample_data(st.ect.2.d); sample_names(physt.ect.2.d) <- st.ect.2.d$seq_sample
+physt.ect.3.d <- sample_data(st.ect.3.d); sample_names(physt.ect.3.d) <- st.ect.3.d$seq_sample
+physt.ect.4.d <- sample_data(st.ect.4.d); sample_names(physt.ect.4.d) <- st.ect.4.d$seq_sample
+
+physt.sap.0.b <- sample_data(st.sap.0.b); sample_names(physt.sap.0.b) <- st.sap.0.b$seq_sample
+physt.sap.1.b <- sample_data(st.sap.1.b); sample_names(physt.sap.1.b) <- st.sap.1.b$seq_sample
+physt.sap.2.b <- sample_data(st.sap.2.b); sample_names(physt.sap.2.b) <- st.sap.2.b$seq_sample
+physt.sap.3.b <- sample_data(st.sap.3.b); sample_names(physt.sap.3.b) <- st.sap.3.b$seq_sample
+physt.sap.4.b <- sample_data(st.sap.4.b); sample_names(physt.sap.4.b) <- st.sap.4.b$seq_sample
+physt.sap.0.r <- sample_data(st.sap.0.r); sample_names(physt.sap.0.r) <- st.sap.0.r$seq_sample
+physt.sap.1.r <- sample_data(st.sap.1.r); sample_names(physt.sap.1.r) <- st.sap.1.r$seq_sample
+physt.sap.2.r <- sample_data(st.sap.2.r); sample_names(physt.sap.2.r) <- st.sap.2.r$seq_sample
+physt.sap.3.r <- sample_data(st.sap.3.r); sample_names(physt.sap.3.r) <- st.sap.3.r$seq_sample
+physt.sap.4.r <- sample_data(st.sap.4.r); sample_names(physt.sap.4.r) <- st.sap.4.r$seq_sample
+physt.sap.0.d <- sample_data(st.sap.0.d); sample_names(physt.sap.0.d) <- st.sap.0.d$seq_sample
+physt.sap.1.d <- sample_data(st.sap.1.d); sample_names(physt.sap.1.d) <- st.sap.1.d$seq_sample
+physt.sap.2.d <- sample_data(st.sap.2.d); sample_names(physt.sap.2.d) <- st.sap.2.d$seq_sample
+physt.sap.3.d <- sample_data(st.sap.3.d); sample_names(physt.sap.3.d) <- st.sap.3.d$seq_sample
+physt.sap.4.d <- sample_data(st.sap.4.d); sample_names(physt.sap.4.d) <- st.sap.4.d$seq_sample
+
+```
+
+
+Phyloseq OTU tables for each subset and transect
+```{r transect-specific sets for phylo, warning=FALSE }
+otu.all.0.b <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.0.b))]
+phyotu.all.0.b <- otu_table(otu.all.0.b, taxa_are_rows = TRUE)
+otu.all.1.b <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.1.b))]
+phyotu.all.1.b <- otu_table(otu.all.1.b, taxa_are_rows = TRUE)
+otu.all.2.b <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.2.b))]
+phyotu.all.2.b <- otu_table(otu.all.2.b, taxa_are_rows = TRUE)
+otu.all.3.b <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.3.b))]
+phyotu.all.3.b <- otu_table(otu.all.3.b, taxa_are_rows = TRUE)
+otu.all.4.b <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.4.b))]
+phyotu.all.4.b <- otu_table(otu.all.4.b, taxa_are_rows = TRUE)
+otu.all.0.r <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.0.r))]
+phyotu.all.0.r <- otu_table(otu.all.0.r, taxa_are_rows = TRUE)
+otu.all.1.r <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.1.r))]
+phyotu.all.1.r <- otu_table(otu.all.1.r, taxa_are_rows = TRUE)
+otu.all.2.r <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.2.r))]
+phyotu.all.2.r <- otu_table(otu.all.2.r, taxa_are_rows = TRUE)
+otu.all.3.r <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.3.r))]
+phyotu.all.3.r <- otu_table(otu.all.3.r, taxa_are_rows = TRUE)
+otu.all.4.r <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.4.r))]
+phyotu.all.4.r <- otu_table(otu.all.4.r, taxa_are_rows = TRUE)
+otu.all.0.d <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.0.d))]
+phyotu.all.0.d <- otu_table(otu.all.0.d, taxa_are_rows = TRUE)
+otu.all.1.d <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.1.d))]
+phyotu.all.1.d <- otu_table(otu.all.1.d, taxa_are_rows = TRUE)
+otu.all.2.d <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.2.d))]
+phyotu.all.2.d <- otu_table(otu.all.2.d, taxa_are_rows = TRUE)
+otu.all.3.d <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.3.d))]
+phyotu.all.3.d <- otu_table(otu.all.3.d, taxa_are_rows = TRUE)
+otu.all.4.d <- OTU_table_all[,which(colnames(OTU_table_all) %in% rownames(st.all.4.d))]
+phyotu.all.4.d <- otu_table(otu.all.4.d, taxa_are_rows = TRUE)
+
+otu.sym.0.b <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.0.b))]
+phyotu.sym.0.b <- otu_table(otu.sym.0.b, taxa_are_rows = TRUE)
+otu.sym.1.b <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.1.b))]
+phyotu.sym.1.b <- otu_table(otu.sym.1.b, taxa_are_rows = TRUE)
+otu.sym.2.b <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.2.b))]
+phyotu.sym.2.b <- otu_table(otu.sym.2.b, taxa_are_rows = TRUE)
+otu.sym.3.b <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.3.b))]
+phyotu.sym.3.b <- otu_table(otu.sym.3.b, taxa_are_rows = TRUE)
+otu.sym.4.b <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.4.b))]
+phyotu.sym.4.b <- otu_table(otu.sym.4.b, taxa_are_rows = TRUE)
+otu.sym.0.r <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.0.r))]
+phyotu.sym.0.r <- otu_table(otu.sym.0.r, taxa_are_rows = TRUE)
+otu.sym.1.r <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.1.r))]
+phyotu.sym.1.r <- otu_table(otu.sym.1.r, taxa_are_rows = TRUE)
+otu.sym.2.r <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.2.r))]
+phyotu.sym.2.r <- otu_table(otu.sym.2.r, taxa_are_rows = TRUE)
+otu.sym.3.r <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.3.r))]
+phyotu.sym.3.r <- otu_table(otu.sym.3.r, taxa_are_rows = TRUE)
+otu.sym.4.r <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.4.r))]
+phyotu.sym.4.r <- otu_table(otu.sym.4.r, taxa_are_rows = TRUE)
+otu.sym.0.d <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.0.d))]
+phyotu.sym.0.d <- otu_table(otu.sym.0.d, taxa_are_rows = TRUE)
+otu.sym.1.d <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.1.d))]
+phyotu.sym.1.d <- otu_table(otu.sym.1.d, taxa_are_rows = TRUE)
+otu.sym.2.d <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.2.d))]
+phyotu.sym.2.d <- otu_table(otu.sym.2.d, taxa_are_rows = TRUE)
+otu.sym.3.d <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.3.d))]
+phyotu.sym.3.d <- otu_table(otu.sym.3.d, taxa_are_rows = TRUE)
+otu.sym.4.d <- OTU_table_sym[,which(colnames(OTU_table_sym) %in% rownames(st.sym.4.d))]
+phyotu.sym.4.d <- otu_table(otu.sym.4.d, taxa_are_rows = TRUE)
+
+otu.ect.0.b <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.0.b))]
+phyotu.ect.0.b <- otu_table(otu.ect.0.b, taxa_are_rows = TRUE)
+otu.ect.1.b <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.1.b))]
+phyotu.ect.1.b <- otu_table(otu.ect.1.b, taxa_are_rows = TRUE)
+otu.ect.2.b <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.2.b))]
+phyotu.ect.2.b <- otu_table(otu.ect.2.b, taxa_are_rows = TRUE)
+otu.ect.3.b <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.3.b))]
+phyotu.ect.3.b <- otu_table(otu.ect.3.b, taxa_are_rows = TRUE)
+otu.ect.4.b <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.4.b))]
+phyotu.ect.4.b <- otu_table(otu.ect.4.b, taxa_are_rows = TRUE)
+otu.ect.0.r <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.0.r))]
+phyotu.ect.0.r <- otu_table(otu.ect.0.r, taxa_are_rows = TRUE)
+otu.ect.1.r <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.1.r))]
+phyotu.ect.1.r <- otu_table(otu.ect.1.r, taxa_are_rows = TRUE)
+otu.ect.2.r <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.2.r))]
+phyotu.ect.2.r <- otu_table(otu.ect.2.r, taxa_are_rows = TRUE)
+otu.ect.3.r <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.3.r))]
+phyotu.ect.3.r <- otu_table(otu.ect.3.r, taxa_are_rows = TRUE)
+otu.ect.4.r <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.4.r))]
+phyotu.ect.4.r <- otu_table(otu.ect.4.r, taxa_are_rows = TRUE)
+otu.ect.0.d <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.0.d))]
+phyotu.ect.0.d <- otu_table(otu.ect.0.d, taxa_are_rows = TRUE)
+otu.ect.1.d <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.1.d))]
+phyotu.ect.1.d <- otu_table(otu.ect.1.d, taxa_are_rows = TRUE)
+otu.ect.2.d <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.2.d))]
+phyotu.ect.2.d <- otu_table(otu.ect.2.d, taxa_are_rows = TRUE)
+otu.ect.3.d <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.3.d))]
+phyotu.ect.3.d <- otu_table(otu.ect.3.d, taxa_are_rows = TRUE)
+otu.ect.4.d <- OTU_table_ect[,which(colnames(OTU_table_ect) %in% rownames(st.ect.4.d))]
+phyotu.ect.4.d <- otu_table(otu.ect.4.d, taxa_are_rows = TRUE)
+
+otu.sap.0.b <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.0.b))]
+phyotu.sap.0.b <- otu_table(otu.sap.0.b, taxa_are_rows = TRUE)
+otu.sap.1.b <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.1.b))]
+phyotu.sap.1.b <- otu_table(otu.sap.1.b, taxa_are_rows = TRUE)
+otu.sap.2.b <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.2.b))]
+phyotu.sap.2.b <- otu_table(otu.sap.2.b, taxa_are_rows = TRUE)
+otu.sap.3.b <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.3.b))]
+phyotu.sap.3.b <- otu_table(otu.sap.3.b, taxa_are_rows = TRUE)
+otu.sap.4.b <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.4.b))]
+phyotu.sap.4.b <- otu_table(otu.sap.4.b, taxa_are_rows = TRUE)
+otu.sap.0.r <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.0.r))]
+phyotu.sap.0.r <- otu_table(otu.sap.0.r, taxa_are_rows = TRUE)
+otu.sap.1.r <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.1.r))]
+phyotu.sap.1.r <- otu_table(otu.sap.1.r, taxa_are_rows = TRUE)
+otu.sap.2.r <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.2.r))]
+phyotu.sap.2.r <- otu_table(otu.sap.2.r, taxa_are_rows = TRUE)
+otu.sap.3.r <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.3.r))]
+phyotu.sap.3.r <- otu_table(otu.sap.3.r, taxa_are_rows = TRUE)
+otu.sap.4.r <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.4.r))]
+phyotu.sap.4.r <- otu_table(otu.sap.4.r, taxa_are_rows = TRUE)
+otu.sap.0.d <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.0.d))]
+phyotu.sap.0.d <- otu_table(otu.sap.0.d, taxa_are_rows = TRUE)
+otu.sap.1.d <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.1.d))]
+phyotu.sap.1.d <- otu_table(otu.sap.1.d, taxa_are_rows = TRUE)
+otu.sap.2.d <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.2.d))]
+phyotu.sap.2.d <- otu_table(otu.sap.2.d, taxa_are_rows = TRUE)
+otu.sap.3.d <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.3.d))]
+phyotu.sap.3.d <- otu_table(otu.sap.3.d, taxa_are_rows = TRUE)
+otu.sap.4.d <- OTU_table_sap[,which(colnames(OTU_table_sap) %in% rownames(st.sap.4.d))]
+phyotu.sap.4.d <- otu_table(otu.sap.4.d, taxa_are_rows = TRUE)
+
+```
+
+
+Phyloseq object for each subset and transect
+```{r create phyloseq objects}
+sedg.all.0.b <- phyloseq(phyotu.all.0.b, physt.all.0.b)
+sedg.all.1.b <- phyloseq(phyotu.all.1.b, physt.all.1.b)
+sedg.all.2.b <- phyloseq(phyotu.all.2.b, physt.all.2.b)
+sedg.all.3.b <- phyloseq(phyotu.all.3.b, physt.all.3.b)
+sedg.all.4.b <- phyloseq(phyotu.all.4.b, physt.all.4.b)
+sedg.all.0.r <- phyloseq(phyotu.all.0.r, physt.all.0.r)
+sedg.all.1.r <- phyloseq(phyotu.all.1.r, physt.all.1.r)
+sedg.all.2.r <- phyloseq(phyotu.all.2.r, physt.all.2.r)
+sedg.all.3.r <- phyloseq(phyotu.all.3.r, physt.all.3.r)
+sedg.all.4.r <- phyloseq(phyotu.all.4.r, physt.all.4.r)
+sedg.all.0.d <- phyloseq(phyotu.all.0.d, physt.all.0.d)
+sedg.all.1.d <- phyloseq(phyotu.all.1.d, physt.all.1.d)
+sedg.all.2.d <- phyloseq(phyotu.all.2.d, physt.all.2.d)
+sedg.all.3.d <- phyloseq(phyotu.all.3.d, physt.all.3.d)
+sedg.all.4.d <- phyloseq(phyotu.all.4.d, physt.all.4.d)
+
+sedg.sym.0.b <- phyloseq(phyotu.sym.0.b, physt.sym.0.b)
+sedg.sym.1.b <- phyloseq(phyotu.sym.1.b, physt.sym.1.b)
+sedg.sym.2.b <- phyloseq(phyotu.sym.2.b, physt.sym.2.b)
+sedg.sym.3.b <- phyloseq(phyotu.sym.3.b, physt.sym.3.b)
+sedg.sym.4.b <- phyloseq(phyotu.sym.4.b, physt.sym.4.b)
+sedg.sym.0.r <- phyloseq(phyotu.sym.0.r, physt.sym.0.r)
+sedg.sym.1.r <- phyloseq(phyotu.sym.1.r, physt.sym.1.r)
+sedg.sym.2.r <- phyloseq(phyotu.sym.2.r, physt.sym.2.r)
+sedg.sym.3.r <- phyloseq(phyotu.sym.3.r, physt.sym.3.r)
+sedg.sym.4.r <- phyloseq(phyotu.sym.4.r, physt.sym.4.r)
+sedg.sym.0.d <- phyloseq(phyotu.sym.0.d, physt.sym.0.d)
+sedg.sym.1.d <- phyloseq(phyotu.sym.1.d, physt.sym.1.d)
+sedg.sym.2.d <- phyloseq(phyotu.sym.2.d, physt.sym.2.d)
+sedg.sym.3.d <- phyloseq(phyotu.sym.3.d, physt.sym.3.d)
+sedg.sym.4.d <- phyloseq(phyotu.sym.4.d, physt.sym.4.d)
+
+sedg.ect.0.b <- phyloseq(phyotu.ect.0.b, physt.ect.0.b)
+sedg.ect.1.b <- phyloseq(phyotu.ect.1.b, physt.ect.1.b)
+sedg.ect.2.b <- phyloseq(phyotu.ect.2.b, physt.ect.2.b)
+sedg.ect.3.b <- phyloseq(phyotu.ect.3.b, physt.ect.3.b)
+sedg.ect.4.b <- phyloseq(phyotu.ect.4.b, physt.ect.4.b)
+sedg.ect.0.r <- phyloseq(phyotu.ect.0.r, physt.ect.0.r)
+sedg.ect.1.r <- phyloseq(phyotu.ect.1.r, physt.ect.1.r)
+sedg.ect.2.r <- phyloseq(phyotu.ect.2.r, physt.ect.2.r)
+sedg.ect.3.r <- phyloseq(phyotu.ect.3.r, physt.ect.3.r)
+sedg.ect.4.r <- phyloseq(phyotu.ect.4.r, physt.ect.4.r)
+sedg.ect.0.d <- phyloseq(phyotu.ect.0.d, physt.ect.0.d)
+sedg.ect.1.d <- phyloseq(phyotu.ect.1.d, physt.ect.1.d)
+sedg.ect.2.d <- phyloseq(phyotu.ect.2.d, physt.ect.2.d)
+sedg.ect.3.d <- phyloseq(phyotu.ect.3.d, physt.ect.3.d)
+sedg.ect.4.d <- phyloseq(phyotu.ect.4.d, physt.ect.4.d)
+
+sedg.sap.0.b <- phyloseq(phyotu.sap.0.b, physt.sap.0.b)
+sedg.sap.1.b <- phyloseq(phyotu.sap.1.b, physt.sap.1.b)
+sedg.sap.2.b <- phyloseq(phyotu.sap.2.b, physt.sap.2.b)
+sedg.sap.3.b <- phyloseq(phyotu.sap.3.b, physt.sap.3.b)
+sedg.sap.4.b <- phyloseq(phyotu.sap.4.b, physt.sap.4.b)
+sedg.sap.0.r <- phyloseq(phyotu.sap.0.r, physt.sap.0.r)
+sedg.sap.1.r <- phyloseq(phyotu.sap.1.r, physt.sap.1.r)
+sedg.sap.2.r <- phyloseq(phyotu.sap.2.r, physt.sap.2.r)
+sedg.sap.3.r <- phyloseq(phyotu.sap.3.r, physt.sap.3.r)
+sedg.sap.4.r <- phyloseq(phyotu.sap.4.r, physt.sap.4.r)
+sedg.sap.0.d <- phyloseq(phyotu.sap.0.d, physt.sap.0.d)
+sedg.sap.1.d <- phyloseq(phyotu.sap.1.d, physt.sap.1.d)
+sedg.sap.2.d <- phyloseq(phyotu.sap.2.d, physt.sap.2.d)
+sedg.sap.3.d <- phyloseq(phyotu.sap.3.d, physt.sap.3.d)
+sedg.sap.4.d <- phyloseq(phyotu.sap.4.d, physt.sap.4.d)
+```
+
+
+```{r load function metagenome}
+make_metagenomeSeq = function(physeq) {
+  require("metagenomeSeq")
+  require("phyloseq")
+  # Enforce orientation
+  if (!taxa_are_rows(physeq)) {
+    physeq <- t(physeq)}
+  OTU = as(otu_table(physeq), "matrix")
+  # Convert sample_data to AnnotatedDataFrame
+  ADF = AnnotatedDataFrame(data.frame(sample_data(physeq)))
+  # define dummy 'feature' data for OTUs, using their name Helps with
+  # extraction and relating to taxonomy later on.
+  TDF = AnnotatedDataFrame(data.frame(OTUname = taxa_names(physeq), row.names = taxa_names(physeq)))
+  # Create the metagenomeSeq object
+  MGS = newMRexperiment(counts = OTU, phenoData = ADF, featureData = TDF)
+  # Trigger metagenomeSeq to calculate its Cumulative Sum scaling factor.
+  MGS = cumNorm(MGS)
+  return(MGS)
+}
+```
+
+```{r prepare and run MDS, message=FALSE, echo=false}
+sedg_all <- sedg.all.0.b
+sedg_sym <- sedg.sym.0.b
+sedg_ect <- sedg.ect.0.b
+sedg_sap <- sedg.sap.0.b
+sedg.meta.all<-make_metagenomeSeq(sedg_all)
+sedg.meta.sym<-make_metagenomeSeq(sedg_sym)
+sedg.meta.ect<-make_metagenomeSeq(sedg_ect)
+sedg.meta.sap<-make_metagenomeSeq(sedg_sap)
+
+sedg.css.all <-MRcounts(sedg.meta.all, norm= TRUE, log= TRUE)
+sedg.css.sym <-MRcounts(sedg.meta.sym, norm= TRUE, log= TRUE)
+sedg.css.ect <-MRcounts(sedg.meta.ect, norm= TRUE, log= TRUE)
+sedg.css.sap <-MRcounts(sedg.meta.sap, norm= TRUE, log= TRUE)
+sedg.csst.all <- t(sedg.css.all)
+sedg.csst.sym <- t(sedg.css.sym)
+sedg.csst.ect <- t(sedg.css.ect)
+sedg.csst.sap <- t(sedg.css.sap)
+
+sedg.dist.all <- vegdist(sedg.csst.all, method= "bray", binary=FALSE, diag=TRUE, upper=TRUE)
+sedg.dist.sym <- vegdist(sedg.csst.sym, method= "bray", binary=FALSE, diag=TRUE, upper=TRUE)
+sedg.dist.ect <- vegdist(sedg.csst.ect, method= "bray", binary=FALSE, diag=TRUE, upper=TRUE)
+sedg.dist.sap <- vegdist(sedg.csst.sap, method= "bray", binary=FALSE, diag=TRUE, upper=TRUE)
+
+set.seed(209)
+sedg.mds.all <- metaMDS(sedg.dist.all, distance = "bray", k=2, trymax = 1000)
+sedg.mds.sym <- metaMDS(sedg.dist.sym, distance = "bray", k=2, trymax = 1000)
+sedg.mds.ect <- metaMDS(sedg.dist.ect, distance = "bray", k=2, trymax = 1000)
+sedg.mds.sap <- metaMDS(sedg.dist.sap, distance = "bray", k=2, trymax = 1000)
+```
+
+
+```{r switch otu to rra}
+sedg.all.0.b = transform_sample_counts(sedg.all.0.b, function(x) x/sum(x))
+sedg.all.0.r = transform_sample_counts(sedg.all.0.r, function(x) x/sum(x))
+sedg.all.0.d = transform_sample_counts(sedg.all.0.d, function(x) x/sum(x))
+
+sedg.sym.0.b = transform_sample_counts(sedg.sym.0.b, function(x) x/sum(x))
+sedg.sym.0.r = transform_sample_counts(sedg.sym.0.r, function(x) x/sum(x))
+sedg.sym.0.d = transform_sample_counts(sedg.sym.0.d, function(x) x/sum(x))
+
+sedg.ect.0.b = transform_sample_counts(sedg.ect.0.b, function(x) x/sum(x))
+sedg.ect.0.r = transform_sample_counts(sedg.ect.0.r, function(x) x/sum(x))
+sedg.ect.0.d = transform_sample_counts(sedg.ect.0.d, function(x) x/sum(x))
+
+sedg.sap.0.b = transform_sample_counts(sedg.sap.0.b, function(x) x/sum(x))
+sedg.sap.0.r = transform_sample_counts(sedg.sap.0.r, function(x) x/sum(x))
+sedg.sap.0.d = transform_sample_counts(sedg.sap.0.d, function(x) x/sum(x))
+
+```
+
+
+```{r building data.scores, message=FALSE}
+data.scores.all <- as.data.frame(scores(sedg.mds.all))
+data.scores.sym <- as.data.frame(scores(sedg.mds.sym))
+data.scores.ect <- as.data.frame(scores(sedg.mds.ect))
+data.scores.sap <- as.data.frame(scores(sedg.mds.sap))
+
+data.scores.all$sample <- rownames(data.scores.all)
+data.scores.sym$sample <- rownames(data.scores.sym)
+data.scores.ect$sample <- rownames(data.scores.ect)
+data.scores.sap$sample <- rownames(data.scores.sap)
+
+data.scores.all$ID<-sedg.meta.all$seq.sample
+data.scores.all$acid_type = case_when(grepl("DNA", data.scores.all$sample) ~ "DNA", grepl("RNA", data.scores.all$sample) ~"RNA")
+data.scores.all$transect<-sedg.meta.all$site_tree_id_transect_id
+data.scores.all$ph<-sedg.meta.all$p_h
+data.scores.all$moisture<-sedg.meta.all$percent_soil_moisture
+data.scores.all$pt <- sedg.meta.all$dist_along_transect
+data.scores.all$transect <- sedg.meta.all$site_tree_id_transect_id
+data.scores.all$organic <- sedg.meta.all$c_n_ratio
+data.scores.all$total.neighbors <- sedg.meta.all$total
+data.scores.all$qudo.rescaled <- sedg.meta.all$qudo.rescaled
+data.scores.all$quag.rescaled <- sedg.meta.all$quag.rescaled
+data.scores.all$oaks.rescaled <- data.scores.all$quag.rescaled + data.scores.all$qudo.rescaled
+data.scores.all$pisa.rescaled <- sedg.meta.all$pisa.rescaled
+data.scores.all$neighbors.rescaled <- sedg.meta.all$total.neighbors.rescaled
+data.scores.all$group <- rep("all", length(data.scores.all[,1]))
+data.scores.all$site <- sedg.meta.all$sample_id
+
+
+data.scores.sym$ID<-sedg.meta.sym$seq.sample
+data.scores.sym$acid_type = case_when(grepl("DNA", data.scores.sym$sample) ~ "DNA", grepl("RNA", data.scores.sym$sample) ~"RNA")
+data.scores.sym$transect<-sedg.meta.sym$site_tree_id_transect_id
+data.scores.sym$ph<-sedg.meta.sym$p_h
+data.scores.sym$moisture<-sedg.meta.sym$percent_soil_moisture
+data.scores.sym$pt <- sedg.meta.sym$dist_along_transect
+data.scores.sym$transect <- sedg.meta.sym$site_tree_id_transect_id
+data.scores.sym$organic <- sedg.meta.sym$c_n_ratio
+data.scores.sym$total.neighbors <- sedg.meta.sym$total
+data.scores.sym$qudo.rescaled <- sedg.meta.sym$qudo.rescaled
+data.scores.sym$quag.rescaled <- sedg.meta.sym$quag.rescaled
+data.scores.sym$oaks.rescaled <- data.scores.sym$quag.rescaled + data.scores.sym$qudo.rescaled
+data.scores.sym$pisa.rescaled <- sedg.meta.sym$pisa.rescaled
+data.scores.sym$neighbors.rescaled <- sedg.meta.sym$total.neighbors.rescaled
+data.scores.sym$group <- rep("sym", length(data.scores.sym[,1]))
+data.scores.sym$site <- sedg.meta.sym$sample_id
+
+data.scores.ect$ID<-sedg.meta.ect$seq.sample
+data.scores.ect$acid_type = case_when(grepl("DNA", data.scores.ect$sample) ~ "DNA", grepl("RNA", data.scores.ect$sample) ~"RNA")
+data.scores.ect$transect<-sedg.meta.ect$site_tree_id_transect_id
+data.scores.ect$ph<-sedg.meta.ect$p_h
+data.scores.ect$moisture<-sedg.meta.ect$percent_soil_moisture
+data.scores.ect$pt <- sedg.meta.ect$dist_along_transect
+data.scores.ect$transect <- sedg.meta.ect$site_tree_id_transect_id
+data.scores.ect$organic <- sedg.meta.ect$c_n_ratio
+data.scores.ect$total.neighbors <- sedg.meta.ect$total
+data.scores.ect$qudo.rescaled <- sedg.meta.ect$qudo.rescaled
+data.scores.ect$quag.rescaled <- sedg.meta.ect$quag.rescaled
+data.scores.ect$oaks.rescaled <- data.scores.ect$quag.rescaled + data.scores.ect$qudo.rescaled
+data.scores.ect$pisa.rescaled <- sedg.meta.ect$pisa.rescaled
+data.scores.ect$neighbors.rescaled <- sedg.meta.ect$total.neighbors.rescaled
+data.scores.ect$group <- rep("ect", length(data.scores.ect[,1]))
+data.scores.ect$site <- sedg.meta.ect$sample_id
+
+data.scores.sap$ID<-sedg.meta.sap$seq.sample
+data.scores.sap$acid_type = case_when(grepl("DNA", data.scores.sap$sample) ~ "DNA", grepl("RNA", data.scores.sap$sample) ~"RNA")
+data.scores.sap$transect<-sedg.meta.sap$site_tree_id_transect_id
+data.scores.sap$ph<-sedg.meta.sap$p_h
+data.scores.sap$moisture<-sedg.meta.sap$percent_soil_moisture
+data.scores.sap$pt <- sedg.meta.sap$dist_along_transect
+data.scores.sap$transect <- sedg.meta.sap$site_tree_id_transect_id
+data.scores.sap$organic <- sedg.meta.sap$c_n_ratio
+data.scores.sap$total.neighbors <- sedg.meta.sap$total
+data.scores.sap$qudo.rescaled <- sedg.meta.sap$qudo.rescaled
+data.scores.sap$quag.rescaled <- sedg.meta.sap$quag.rescaled
+data.scores.sap$oaks.rescaled <- data.scores.sap$quag.rescaled + data.scores.sap$qudo.rescaled
+data.scores.sap$pisa.rescaled <- sedg.meta.sap$pisa.rescaled
+data.scores.sap$neighbors.rescaled <- sedg.meta.sap$total.neighbors.rescaled
+data.scores.sap$group <- rep("ect", length(data.scores.sap[,1]))
+data.scores.sap$site <- sedg.meta.sap$sample_id
+
+```
+
+
+```{r RNA and DNA specific subsets, message=FALSE}
+RNA.set.all <- data.scores.all[data.scores.all$acid_type=="RNA",]
+RNA.set.all <- RNA.set.all[order(RNA.set.all$pt),]
+DNA.set.all <- data.scores.all[data.scores.all$acid_type=="DNA",]
+DNA.set.all <- DNA.set.all[order(DNA.set.all$pt),]
+
+RNA.set.sym <- data.scores.sym[data.scores.sym$acid_type=="RNA",]
+RNA.set.sym <- RNA.set.sym[order(RNA.set.sym$pt),]
+DNA.set.sym <- data.scores.sym[data.scores.sym$acid_type=="DNA",]
+DNA.set.sym <- DNA.set.sym[order(DNA.set.sym$pt),]
+
+RNA.set.ect <- data.scores.ect[data.scores.ect$acid_type=="RNA",]
+RNA.set.ect <- RNA.set.ect[order(RNA.set.ect$pt),]
+DNA.set.ect <- data.scores.ect[data.scores.ect$acid_type=="DNA",]
+DNA.set.ect <- DNA.set.ect[order(DNA.set.ect$pt),]
+
+RNA.set.sap <- data.scores.sap[data.scores.sap$acid_type=="RNA",]
+RNA.set.sap <- RNA.set.sap[order(RNA.set.sap$pt),]
+DNA.set.sap <- data.scores.sap[data.scores.sap$acid_type=="DNA",]
+DNA.set.sap <- DNA.set.sap[order(DNA.set.sap$pt),]
+```
+
+#Diversity inquiries
+
+```{r setting up diversity dfs}
+#making dataframes for use in diversity matrices
+asv.tab.dm <- data.matrix(as.data.frame(otu_table(sedg.all.0.b)))
+rna.tab <- asv.tab.dm[,grepl("RNA", colnames(asv.tab.dm))]
+dna.tab <- asv.tab.dm[,grepl("DNA", colnames(asv.tab.dm))] 
+colnames(rna.tab) <- sub(".RNA", "", colnames(rna.tab))
+colnames(dna.tab) <- sub(".DNA", "", colnames(dna.tab))
+rna.tab <- rna.tab[,which(colnames(rna.tab) %in% colnames(dna.tab))]
+dna.tab <- dna.tab[,which(colnames(dna.tab) %in% colnames(rna.tab))]
+
+#data matrix by funguild subset
+asv.tab.total.sym.dm <- data.matrix(as.data.frame(otu_table(sedg.sym.0.b)))
+asv.tab.total.ect.dm <- data.matrix(as.data.frame(otu_table(sedg.ect.0.b)))
+asv.tab.total.sap.dm <- data.matrix(as.data.frame(otu_table(sedg.sap.0.b)))
+```
+
+```{r DNA v RNA occuarnce by soil core}
+#make binary occurrence matrix
+asv.yn <- asv.tab.dm
+for(i in 1:length(asv.yn)){
+  if(asv.yn[i]==0){}else{asv.yn[i] <- 1}
+}
+
+asv.yn[10]
+
+#subset by RNA and DNA
+rna.yn <- asv.yn[,grepl("RNA", colnames(asv.yn))]
+dna.yn <- asv.yn[,grepl("DNA", colnames(asv.yn))]
+colnames(rna.yn) <- sub(".RNA", "", colnames(rna.yn))
+colnames(dna.yn) <- sub(".DNA", "", colnames(dna.yn))
+rna.yn <- rna.yn[,which(colnames(rna.yn) %in% colnames(dna.yn))]
+dna.yn <- dna.yn[,which(colnames(dna.yn) %in% colnames(rna.yn))]
+
+diff.dna.tf <- dna.yn>rna.yn #asv in DNA but not RNA sample from a given site
+diff.rna.tf <- dna.yn<rna.yn #asv in DNA but not RNA sample from a given site
+same.same <- dna.yn == rna.yn #when are RNA and DNA occurance binary scores the same?
+same.positive <- same.same == (rna.yn==1) #when do OTUs appear in BOTH RNA and DNA
+
+mean(colSums(diff.dna.tf)/colSums(dna.yn)) #what percent of DNA OTUs do not show up in corresponding RNA comm
+mean(colSums(diff.rna.tf)/colSums(rna.yn)) #what percent of RNA OTUs do not show up in corresponding DNA comm
+
+dna.spp <- rowSums(diff.dna.tf) #number of OTU occurances in ONLY DNA sample at a site
+rna.spp <- rowSums(diff.rna.tf) #number of OTU occurances in ONLY RNA sample at a site
+
+```
+
+Below, I aim to look at the relative read abundance of OTUs showing up in EITHER the DNA or the RNA sample at a given site to assess whether these OTUs are in such low abundance that they might have been missed in the corresponding acid type due to sequencing depth. This was not the case. 
+```{r relative read abundance}
+
+#matrices to eventually hold relative read abundance scores
+dna.occ.matrix <- matrix(rep(NaN, length(dna.tab)), nrow=length(dna.tab[,1]), ncol=length(dna.tab[1,]))
+colnames(dna.occ.matrix)<- colnames(dna.tab)
+rna.occ.matrix <- matrix(rep(NaN, length(rna.tab)), nrow=length(rna.tab[,1]), ncol=length(rna.tab[1,]))
+colnames(rna.occ.matrix)<- colnames(rna.tab)
+
+#relative read abundance of DNA not in RNA and RNA not in DNA comms
+for(i in 1:length(dna.tab[,1])){ #i is row
+  for(j in 1:length(dna.tab[1,])){ #j is column
+    if(diff.dna.tf[i,j]==FALSE)
+      {dna.occ.matrix[i,j] <-0}
+    else{
+      dna.occ.matrix[i,j] <- (dna.tab[i,j])/(colSums(dna.tab)[j])
+    }
+     if(diff.rna.tf[i,j]==FALSE)
+      {rna.occ.matrix[i,j] <-0}
+    else{
+      rna.occ.matrix[i,j] <- (rna.tab[i,j])/(colSums(rna.tab)[j])
+    }}}
+
+mean(colSums(rna.occ.matrix)) #average total read abundance to spp only in RNA in a given sample
+mean(colSums(dna.occ.matrix)) #average total read abundance to spp only in RNA in a given sample
+
+mean(rna.occ.matrix[rna.occ.matrix>0]) #mean relative read abundance of RNA-only OTUs in samples
+mean(dna.occ.matrix[dna.occ.matrix>0]) #mean relative read abundance of DNA-only OTUs in samples
+```
+
+
+```{r read abundance of co-occurring OTUs, include=FALSE}
+#holding matrices for comparing relative read abundance of OTUs appearing in both acid types
+dna.same.matrix <- matrix(rep(NaN, length(dna.tab)), nrow=length(dna.tab[,1]), ncol=length(dna.tab[1,]))
+colnames(dna.same.matrix)<- colnames(dna.tab)
+rna.same.matrix <- matrix(rep(NaN, length(dna.tab)), nrow=length(dna.tab[,1]), ncol=length(dna.tab[1,]))
+colnames(rna.same.matrix)<- colnames(dna.tab)
+
+for(i in 1:length(dna.tab[,1])){ #i is row
+  for(j in 1:length(dna.tab[1,])){ #j is column
+    if(same.positive[i,j]==FALSE)
+      {dna.same.matrix[i,j] <-0}
+    else{
+      dna.same.matrix[i,j] <- (dna.tab[i,j])/(colSums(dna.tab)[j])
+    }
+     if(same.positive[i,j]==FALSE)
+      {rna.same.matrix[i,j] <-0}
+    else{
+      rna.same.matrix[i,j] <- (rna.tab[i,j])/(colSums(rna.tab)[j])
+    }}}
+```
+
+
+```{r summary stats of RNA v DNA occurrence, include=FALSE}
+#do the median relative read abundance for spp occuring in only one verus both acid types differ? 
+mean(rna.occ.matrix[rna.occ.matrix>0])
+mean(rna.same.matrix[rna.same.matrix>0])
+mean(dna.occ.matrix[dna.occ.matrix>0])
+mean(dna.same.matrix[dna.same.matrix>0])
+
+median(rna.occ.matrix[rna.occ.matrix>0])
+median(rna.same.matrix[rna.same.matrix>0])
+median(dna.occ.matrix[dna.occ.matrix>0])
+median(dna.same.matrix[dna.same.matrix>0])
+
+var(rna.occ.matrix[rna.occ.matrix>0])
+var(rna.same.matrix[rna.same.matrix>0])
+var(dna.occ.matrix[dna.occ.matrix>0])
+var(dna.same.matrix[dna.same.matrix>0])
+
+sd(rna.occ.matrix[rna.occ.matrix>0])
+sd(rna.same.matrix[rna.same.matrix>0])
+sd(dna.occ.matrix[dna.occ.matrix>0])
+sd(dna.same.matrix[dna.same.matrix>0])
+```
+
+Looking at the occurrence data from RNA and DNA communities, it is clear that the RNA community have a greater increase in relative abundance from the RNA-only to the co-occurring OTUs. Roughly 100% increase in average read abundance. Co-occurring OTUs are also much more variable (in RRA) in the RNA set, with the RNA only set having the smallest variance of all groups. 
+
+##Spp accumulation
+Looking at spp accumulation curves for the entire fungal comm, only symiotrophs, and only ects. Intuitively, it appears that the entire community accumulates with greater slope through the initial sites though none of the subsets saturate.
+```{r species accumulation, include=FALSE}
+
+rna.asv <- asv.tab.dm[,grepl("RNA", colnames(asv.tab.dm))]
+dna.asv <- asv.tab.dm[,grepl("DNA", colnames(asv.tab.dm))]
+
+all.spp.ac <- specaccum(t(asv.tab.dm), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+rna.spp.ac <- specaccum(t(rna.asv), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+dna.spp.ac <- specaccum(t(dna.asv), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+#png("spp_accumulation.png", width= 700, height = 500)
+plot(all.spp.ac, ci.type="poly", col="blue", lwd=2, ci.lty=0, ci.col="lightblue")
+plot(rna.spp.ac, ci.type="poly", col="blue", lwd=2, ci.lty=0, ci.col="lightblue")
+plot(dna.spp.ac, ci.type="poly", col="blue", lwd=2, ci.lty=0, ci.col="lightblue")
+#dev.off()
+```
+
+```{r dissimilarity matrices by group, warning= FALSE}
+sedg.bray <- vegdist(t(asv.tab.dm), method= "bray")
+sym.bray <- vegdist(t(asv.tab.total.sym.dm), method= "bray")
+ect.bray <- vegdist(t(asv.tab.total.ect.dm), method= "bray")
+sap.bray <- vegdist(t(asv.tab.total.sap.dm), method= "bray")
+
+diss.matrix.all <- as.matrix(sedg.bray) 
+rownames(diss.matrix.all) <- colnames(asv.tab.dm)
+colnames(diss.matrix.all) <- colnames(asv.tab.dm)
+
+diss.matrix.sym <- as.matrix(sym.bray)
+rownames(diss.matrix.sym) <- colnames(asv.tab.total.sym.dm)
+colnames(diss.matrix.sym) <- colnames(asv.tab.total.sym.dm)
+
+diss.matrix.ect <- as.matrix(ect.bray)
+rownames(diss.matrix.ect) <- colnames(asv.tab.total.ect.dm)
+colnames(diss.matrix.ect) <- colnames(asv.tab.total.ect.dm)
+
+diss.matrix.sap <- as.matrix(sap.bray)
+rownames(diss.matrix.sap) <- colnames(asv.tab.total.sap.dm)
+colnames(diss.matrix.sap) <- colnames(asv.tab.total.sap.dm)
+
+```
+
+```{r site dissimilarity}
+#keep only columns from RNA samples
+dissmat.all <- diss.matrix.all[,(grepl("RNA", colnames(diss.matrix.all)))]
+#keep only rows from DNA samples
+dissmat.all <- dissmat.all[(grepl("DNA", rownames(dissmat.all))),]
+#remove sample type from names
+colnames(dissmat.all) <- sub(".RNA", "", colnames(dissmat.all))
+rownames(dissmat.all) <- sub(".DNA", "", rownames(dissmat.all))
+#subset rows and columns to match one another
+dissmat.all <- dissmat.all[,which(colnames(dissmat.all) %in% rownames(dissmat.all))]
+dissmat.all <- dissmat.all[which(rownames(dissmat.all) %in% colnames(dissmat.all)),]
+# test that the matrix is exactly symmetrical
+#rownames(dissmat.all) == colnames(dissmat.all) 
+
+#comparing each RNA to DNA sample
+dissvec.all <- NaN*length(dissmat.all[1,]) #holding vectr
+for(i in 1:length(dissmat.all[1,])){
+dissvec.all[i] <- dissmat.all[i,i] }
+diss.sites.all <- tibble(rownames(dissmat.all), dissvec.all, rep("all", length(dissvec.all)) )
+colnames(diss.sites.all) <- c("site", "similarity", "group")
+
+#same as above but for the 'sym' group
+dissmat.sym <- diss.matrix.sym[,(grepl("RNA", colnames(diss.matrix.sym)))]
+dissmat.sym <- dissmat.sym[(grepl("DNA", rownames(dissmat.sym))),]
+colnames(dissmat.sym) <- sub(".RNA", "", colnames(dissmat.sym))
+rownames(dissmat.sym) <- sub(".DNA", "", rownames(dissmat.sym))
+dissmat.sym <- dissmat.sym[,which(colnames(dissmat.sym) %in% rownames(dissmat.sym))]
+dissmat.sym <- dissmat.sym[which(rownames(dissmat.sym) %in% colnames(dissmat.sym)),]
+#rownames(dissmat.sym) == colnames(dissmat.sym) # test that the matrix is exactly symmetrical
+dissvec.sym <- NaN*length(dissmat.sym[1,])
+for(i in 1:length(dissmat.sym[1,])){
+dissvec.sym[i] <- dissmat.sym[i,i] }
+diss.sites.sym <- tibble(rownames(dissmat.sym), dissvec.sym, rep("sym", length(dissvec.sym)) )
+colnames(diss.sites.sym) <- c("site", "similarity", "group")
+
+#same as above but for the 'ect' group
+dissmat.ect <- diss.matrix.ect[,(grepl("RNA", colnames(diss.matrix.ect)))]
+dissmat.ect <- dissmat.ect[(grepl("DNA", rownames(dissmat.ect))),]
+colnames(dissmat.ect) <- sub(".RNA", "", colnames(dissmat.ect))
+rownames(dissmat.ect) <- sub(".DNA", "", rownames(dissmat.ect))
+dissmat.ect <- dissmat.ect[,which(colnames(dissmat.ect) %in% rownames(dissmat.ect))]
+dissmat.ect <- dissmat.ect[which(rownames(dissmat.ect) %in% colnames(dissmat.ect)),]
+#rownames(dissmat.ect) == colnames(dissmat.ect) # test that the matrix is exactly symmetrical
+dissvec.ect <- NaN*length(dissmat.ect[1,])
+for(i in 1:length(dissmat.ect[1,])){
+dissvec.ect[i] <- dissmat.ect[i,i] }
+diss.sites.ect <- tibble(rownames(dissmat.ect), dissvec.ect, rep("ect", length(dissvec.ect)) )
+colnames(diss.sites.ect) <- c("site", "similarity", "group")
+
+#same as above but for the 'sap' group
+dissmat.sap <- diss.matrix.sap[,(grepl("RNA", colnames(diss.matrix.sap)))]
+dissmat.sap <- dissmat.sap[(grepl("DNA", rownames(dissmat.sap))),]
+colnames(dissmat.sap) <- sub(".RNA", "", colnames(dissmat.sap))
+rownames(dissmat.sap) <- sub(".DNA", "", rownames(dissmat.sap))
+dissmat.sap <- dissmat.sap[,which(colnames(dissmat.sap) %in% rownames(dissmat.sap))]
+dissmat.sap <- dissmat.sap[which(rownames(dissmat.sap) %in% colnames(dissmat.sap)),]
+#rownames(dissmat.sap) == colnames(dissmat.sap) # test that the matrix is exactly symmetrical
+dissvec.sap <- NaN*length(dissmat.sap[1,])
+for(i in 1:length(dissmat.sap[1,])){
+dissvec.sap[i] <- dissmat.sap[i,i] }
+diss.sites.sap <- tibble(rownames(dissmat.sap), dissvec.sap, rep("sap", length(dissvec.sap)) )
+colnames(diss.sites.sap) <- c("site", "similarity", "group")
+
+#create dissimilarity master dataframe with ordered groups from largest to smallest
+dissimilarity.master <- bind_rows(diss.sites.all, diss.sites.sym, diss.sites.ect, diss.sites.sap) 
+dissimilarity.master$group <- factor(dissimilarity.master$group, levels = c("all", "sym", "ect", "sap"))
+```
+
+Below, I look at the average dissimilarity between each RNA sample and the rest of the RNA samples. Plotted is this value by transect. Something to look at might be the dissimilarity within transects as a function of above-ground diversity. 
+
+
+```{r dissimilarity RNA sets, include= FALSE}
+dissrna.all <- diss.matrix.all[,(grepl("RNA", colnames(diss.matrix.all)))]
+dissrna.all <- dissrna.all[(grepl("RNA", rownames(dissrna.all))),]
+dissvec.all <- NaN*length(dissrna.all[1,])
+for(i in 1:length(dissrna.all[1,])){
+dissvec.all[i] <- mean(colSums(dissrna.all)[i])}
+dissrna.tib.all <- tibble(rownames(dissrna.all), dissvec.all, rep("all", length(dissvec.all)) )
+colnames(dissrna.tib.all) <- c("site", "similarity", "group")
+dissrna.tib.all <- left_join(dissrna.tib.all, data.scores.all, by = c("site"="sample"))
+
+dissrna.sym <- diss.matrix.sym[,(grepl("RNA", colnames(diss.matrix.sym)))]
+dissrna.sym <- dissrna.sym[(grepl("RNA", rownames(dissrna.sym))),]
+dissvec.sym <- NaN*length(dissrna.sym[1,])
+for(i in 1:length(dissrna.sym[1,])){
+dissvec.sym[i] <- mean(colSums(dissrna.sym)[i]) }
+dissrna.tib.sym <- tibble(rownames(dissrna.sym), dissvec.sym, rep("sym", length(dissvec.sym)) )
+colnames(dissrna.tib.sym) <- c("site", "similarity", "group")
+dissrna.tib.sym <- left_join(dissrna.tib.sym, data.scores.sym, by = c("site"="sample"))
+
+dissrna.ect <- diss.matrix.ect[,(grepl("RNA", colnames(diss.matrix.ect)))]
+dissrna.ect <- dissrna.ect[(grepl("RNA", rownames(dissrna.ect))),]
+dissvec.ect <- NaN*length(dissrna.ect[1,])
+for(i in 1:length(dissrna.ect[1,])){
+dissvec.ect[i] <- mean(colSums(dissrna.ect)[i]) }
+dissrna.tib.ect <- tibble(rownames(dissrna.ect), dissvec.ect, rep("ect", length(dissvec.ect)) )
+colnames(dissrna.tib.ect) <- c("site", "similarity", "group")
+dissrna.tib.ect <- left_join(dissrna.tib.ect, data.scores.ect, by = c("site"="sample"))
+
+dissrna.sap <- diss.matrix.sap[,(grepl("RNA", colnames(diss.matrix.sap)))]
+dissrna.sap <- dissrna.sap[(grepl("RNA", rownames(dissrna.sap))),]
+dissvec.sap <- NaN*length(dissrna.sap[1,])
+for(i in 1:length(dissrna.sap[1,])){
+dissvec.sap[i] <- mean(colSums(dissrna.sap)[i]) }
+dissrna.tib.sap <- tibble(rownames(dissrna.sap), dissvec.sap, rep("sap", length(dissvec.sap)) )
+colnames(dissrna.tib.sap) <- c("site", "similarity", "group")
+dissrna.tib.sap <- left_join(dissrna.tib.sap, data.scores.sap, by = c("site"="sample"))
+
+dissrna.master <- bind_rows(dissrna.tib.all, dissrna.tib.sym, dissrna.tib.ect, dissrna.tib.sap) 
+dissrna.master$group <- factor(dissrna.master$group.x, levels = c("all", "sym", "ect", "sap"))
+
+```
+
+Below, I look at the average dissimilarity between each DNA sample and the rest of the DNA samples. Plotted is this value by transect. Something to look at might be the dissimilarity within transects as a function of above-ground diversity. 
+
+```{r dissimilarity DNA sets}
+dissdna.all <- diss.matrix.all[,(grepl("DNA", colnames(diss.matrix.all)))]
+dissdna.all <- dissdna.all[(grepl("DNA", rownames(dissdna.all))),]
+dissvec.all <- NaN*length(dissdna.all[1,])
+for(i in 1:length(dissdna.all[1,])){
+dissvec.all[i] <- mean(colSums(dissdna.all)[i]) }
+dissdna.tib.all <- tibble(rownames(dissdna.all), dissvec.all, rep("all", length(dissvec.all)) )
+colnames(dissdna.tib.all) <- c("site", "similarity", "group")
+dissdna.tib.all <- left_join(dissdna.tib.all, data.scores.all, by = c("site"="sample"))
+
+dissdna.sym <- diss.matrix.sym[,(grepl("DNA", colnames(diss.matrix.sym)))]
+dissdna.sym <- dissdna.sym[(grepl("DNA", rownames(dissdna.sym))),]
+dissvec.sym <- NaN*length(dissdna.sym[1,])
+for(i in 1:length(dissdna.sym[1,])){
+dissvec.sym[i] <- mean(colSums(dissdna.sym)[i]) }
+dissdna.tib.sym <- tibble(rownames(dissdna.sym), dissvec.sym, rep("sym", length(dissvec.sym)) )
+colnames(dissdna.tib.sym) <- c("site", "similarity", "group")
+dissdna.tib.sym <- left_join(dissdna.tib.sym, data.scores.sym, by = c("site"="sample"))
+
+dissdna.ect <- diss.matrix.ect[,(grepl("DNA", colnames(diss.matrix.ect)))]
+dissdna.ect <- dissdna.ect[(grepl("DNA", rownames(dissdna.ect))),]
+dissvec.ect <- NaN*length(dissdna.ect[1,])
+for(i in 1:length(dissdna.ect[1,])){
+dissvec.ect[i] <- mean(colSums(dissdna.ect)[i]) }
+dissdna.tib.ect <- tibble(rownames(dissdna.ect), dissvec.ect, rep("ect", length(dissvec.ect)) )
+colnames(dissdna.tib.ect) <- c("site", "similarity", "group")
+dissdna.tib.ect <- left_join(dissdna.tib.ect, data.scores.ect, by = c("site"="sample"))
+
+dissdna.sap <- diss.matrix.sap[,(grepl("DNA", colnames(diss.matrix.sap)))]
+dissdna.sap <- dissdna.sap[(grepl("DNA", rownames(dissdna.sap))),]
+dissvec.sap <- NaN*length(dissdna.sap[1,])
+for(i in 1:length(dissdna.sap[1,])){
+dissvec.sap[i] <- mean(colSums(dissdna.sap)[i]) }
+dissdna.tib.sap <- tibble(rownames(dissdna.sap), dissvec.sap, rep("sap", length(dissvec.sap)) )
+colnames(dissdna.tib.sap) <- c("site", "similarity", "group")
+dissdna.tib.sap <- left_join(dissdna.tib.sap, data.scores.sap, by = c("site"="sample"))
+
+dissdna.master <- bind_rows(dissdna.tib.all, dissdna.tib.sym, dissdna.tib.ect, dissdna.tib.sap) 
+dissdna.master$group <- factor(dissdna.master$group.x, levels = c("all", "sym", "ect", "sap"))
+
+```
+
+Below, I look at the average dissimilarity between each RNA/DNA sample and the rest of the RNA/DNA samples. Plotted is this value by transect. Something to look at might be the dissimilarity within transects as a function of above-ground diversity. 
+
+```{r similarity by neighbors}
+data.scores.master <-bind_rows(data.scores.all, data.scores.sym, data.scores.ect, data.scores.sap)
+dissimilarity.meta <- left_join(dissimilarity.master, data.scores.master, by= c("site", "group"))
+dissimilarity.meta$group <- factor(dissimilarity.meta$group, levels = c("all", "sym", "ect", "sap"))
+
+```
+
+#STATS: Setting up dfs to create PERMANOVA analyses of each of our sample sets/subsets. 
+What I have currently found is that there is no recognizable signal in the DNA communities but that, at least numerically, the signal of both abiotic and biotic factors increases in power as we move from a smaller subset of the data (e.g. ectos only) to the larger overall dataset. 
+
+```{r envfit mds sets}
+#create dataframes with only columns that are going to be useful for envfit and below. Removing confusing additions. 
+all.env <- sample_table_all %>% 
+  dplyr::select(site_tree_id_transect_id, litter_depth_cm, carbon_percent, nitrogen_percent, c_n_ratio, p_h, 
+         qudo, quag, pisa, oak)
+sym.env <- sample_table_sym %>% 
+  dplyr::select(site_tree_id_transect_id, litter_depth_cm, carbon_percent, nitrogen_percent, c_n_ratio, p_h, 
+         qudo, quag, pisa, oak)
+ect.env <- sample_table_ect %>% 
+  dplyr::select(site_tree_id_transect_id, litter_depth_cm, carbon_percent, nitrogen_percent, c_n_ratio, p_h, 
+         qudo, quag, pisa, oak)
+sap.env <- sample_table_sap %>% 
+  dplyr::select(site_tree_id_transect_id, litter_depth_cm, carbon_percent, nitrogen_percent, c_n_ratio, p_h, 
+         qudo, quag, pisa, oak)
+
+all.fit <- envfit(sedg.mds.all, all.env, permutations=999, na.rm=TRUE)
+sym.fit <- envfit(sedg.mds.sym, sym.env, permutations=999, na.rm=TRUE)
+ect.fit <- envfit(sedg.mds.ect, ect.env, permutations=999, na.rm=TRUE)
+sap.fit <- envfit(sedg.mds.sap, sap.env, permutations=999, na.rm=TRUE)
+
+```
+
+
+```{r adonis by subset (not transects though)}
+#these are duplicated efforts from above before creating the NMDS plots, but just for ease and connectivity I create them again. 
+sedg_dist_matrix <- phyloseq::distance(sedg.all.0.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.0.d)$p_h+ sample_data(sedg.all.0.d)$c_n_ratio+ sample_data(sedg.all.0.d)$qudo + sample_data(sedg.all.0.d)$quag + sample_data(sedg.all.0.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.sym.0.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.sym.0.d)$p_h+sample_data(sedg.sym.0.d)$c_n_ratio+ sample_data(sedg.sym.0.d)$qudo + sample_data(sedg.sym.0.d)$quag + sample_data(sedg.sym.0.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.0.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.0.d)$p_h+ sample_data(sedg.ect.0.d)$c_n_ratio+ sample_data(sedg.ect.0.d)$qudo + sample_data(sedg.ect.0.d)$quag + sample_data(sedg.ect.0.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.sap.0.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.sap.0.d)$p_h+ sample_data(sedg.sap.0.d)$c_n_ratio+ sample_data(sedg.sap.0.d)$qudo + sample_data(sedg.sap.0.d)$quag + sample_data(sedg.sap.0.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.0.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.0.r)$p_h+sample_data(sedg.all.0.r)$c_n_ratio+ sample_data(sedg.all.0.r)$qudo + sample_data(sedg.all.0.r)$quag +sample_data(sedg.all.0.r)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.sym.0.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.sym.0.r)$p_h+sample_data(sedg.sym.0.r)$c_n_ratio+ sample_data(sedg.sym.0.r)$qudo + sample_data(sedg.sym.0.r)$quag +sample_data(sedg.sym.0.r)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.0.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.0.r)$p_h +sample_data(sedg.ect.0.r)$c_n_ratio + sample_data(sedg.ect.0.r)$qudo + sample_data(sedg.ect.0.r)$quag +sample_data(sedg.ect.0.r)$pisa )
+
+sedg_dist_matrix <- phyloseq::distance(sedg.sap.0.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.sap.0.r)$p_h +sample_data(sedg.sap.0.r)$c_n_ratio + sample_data(sedg.sap.0.r)$qudo + sample_data(sedg.sap.0.r)$quag +sample_data(sedg.sap.0.r)$pisa )
+```
+
+```{r RNA permanova by sample subset all}
+sedg_dist_matrix <- phyloseq::distance(sedg.all.0.r, method = "bray")
+sedg.all.0.r.tib <- as_tibble(sample_data(sedg.all.0.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", "dist_along_transect"= "position_along_transect_m"))
+
+donis1 <- adonis(sedg_dist_matrix~sedg.all.0.r.tib$p_h+sedg.all.0.r.tib$c_n_ratio+ sedg.all.0.r.tib$qudo + sedg.all.0.r.tib$quag +sedg.all.0.r.tib$pisa +sedg.all.0.r.tib$p_mg_kg +sedg.all.0.r.tib$percent_soil_moisture.y + sedg.all.0.r.tib$transect)
+
+df1 <- as.data.frame(donis1$aov.tab); row.names(df1)[1:8] <- c("pH", "C:N ratio", "QUDO", "QUAG", "PISA", "P mg/kg", "Percent soil moisture", "Transect")
+
+```
+
+
+Permanova for all symbiotrophs.
+```{r RNA permanova by sample subset sym, echo= FALSE}
+sedg_dist_matrix <- phyloseq::distance(sedg.sym.0.r, method = "bray")
+sedg.sym.0.r.tib <- as_tibble(sample_data(sedg.sym.0.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", "dist_along_transect"= "position_along_transect_m"))
+
+donis2 <- adonis(sedg_dist_matrix~sedg.sym.0.r.tib$p_h+sedg.sym.0.r.tib$c_n_ratio+ sedg.sym.0.r.tib$qudo + sedg.sym.0.r.tib$quag +sedg.sym.0.r.tib$pisa +sedg.sym.0.r.tib$p_mg_kg +sedg.sym.0.r.tib$percent_soil_moisture.y +sedg.sym.0.r.tib$transect)
+
+df2 <- as.data.frame(donis2$aov.tab); row.names(df2)[1:8] <- c("pH", "C:N ratio", "QUDO", "QUAG", "PISA", "P mg/kg", "Percent soil moisture", "Transect")
+
+```
+
+
+
+
+Permanova for ectomycorrhizal fungi.
+```{r RNA permanova by sample subset ect, echo= FALSE, warning= FALSE}
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.0.r, method = "bray")
+sedg.ect.0.r.tib <- as_tibble(sample_data(sedg.ect.0.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", "dist_along_transect"= "position_along_transect_m"))
+
+donis3 <- adonis(sedg_dist_matrix~sedg.ect.0.r.tib$p_h +sedg.ect.0.r.tib$c_n_ratio + sedg.ect.0.r.tib$qudo + sedg.ect.0.r.tib$quag +sedg.ect.0.r.tib$pisa +sedg.ect.0.r.tib$p_mg_kg +sedg.ect.0.r.tib$percent_soil_moisture.y +sedg.ect.0.r.tib$transect)
+
+df3 <- as.data.frame(donis3$aov.tab); row.names(df3)[1:8] <- c("pH", "C:N ratio", "QUDO", "QUAG", "PISA", "P mg/kg", "Percent soil moisture", "Transect")
+```
+
+Permanova for saprotroph fungi.
+```{r RNA permanova by sample subset sap, echo= FALSE, warning= FALSE}
+sedg_dist_matrix <- phyloseq::distance(sedg.sap.0.r, method = "bray")
+sedg.sap.0.r.tib <- as_tibble(sample_data(sedg.sap.0.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", "dist_along_transect"= "position_along_transect_m"))
+
+donis4 <- adonis(sedg_dist_matrix~sedg.sap.0.r.tib$p_h +sedg.sap.0.r.tib$c_n_ratio + sedg.sap.0.r.tib$qudo + sedg.sap.0.r.tib$quag +sedg.sap.0.r.tib$pisa +sedg.sap.0.r.tib$p_mg_kg +sedg.sap.0.r.tib$percent_soil_moisture.y +sedg.sap.0.r.tib$transect)
+
+df3 <- as.data.frame(donis4$aov.tab); row.names(df3)[1:8] <- c("pH", "C:N ratio", "QUDO", "QUAG", "PISA", "P mg/kg", "Percent soil moisture", "Transect")
+```
+
+
+
+###Which environmental factors best predict the ect/all dna community dissimilarity
+```{r adonis by transect DNA}
+sedg_dist_matrix <- phyloseq::distance(sedg.all.1.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.1.d)$p_h+sample_data(sedg.all.1.d)$c_n_ratio+ sample_data(sedg.all.1.d)$qudo + sample_data(sedg.all.1.d)$quag +sample_data(sedg.all.1.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.2.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.2.d)$p_h+sample_data(sedg.all.2.d)$c_n_ratio+ sample_data(sedg.all.2.d)$qudo + sample_data(sedg.all.2.d)$quag +sample_data(sedg.all.2.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.3.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.3.d)$p_h+sample_data(sedg.all.3.d)$c_n_ratio+ sample_data(sedg.all.3.d)$qudo + sample_data(sedg.all.3.d)$quag +sample_data(sedg.all.3.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.4.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.4.d)$p_h+sample_data(sedg.all.4.d)$c_n_ratio+ sample_data(sedg.all.4.d)$qudo + sample_data(sedg.all.4.d)$quag +sample_data(sedg.all.4.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.1.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.1.d)$p_h+sample_data(sedg.ect.1.d)$c_n_ratio+ sample_data(sedg.ect.1.d)$qudo + sample_data(sedg.ect.1.d)$quag)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.2.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.2.d)$p_h+sample_data(sedg.ect.2.d)$c_n_ratio+ sample_data(sedg.ect.2.d)$qudo + sample_data(sedg.ect.2.d)$quag +sample_data(sedg.ect.2.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.3.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.3.d)$p_h+sample_data(sedg.ect.3.d)$c_n_ratio+ sample_data(sedg.ect.3.d)$qudo + sample_data(sedg.ect.3.d)$quag +sample_data(sedg.ect.3.d)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.4.d, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.4.d)$p_h+sample_data(sedg.ect.4.d)$c_n_ratio+ sample_data(sedg.ect.4.d)$qudo + sample_data(sedg.ect.4.d)$quag)
+```
+
+
+###Which environmental factors best predict the ect/all rna community dissimilarity
+```{r adonis by transect RNA}
+sedg_dist_matrix <- phyloseq::distance(sedg.all.1.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.1.r)$p_h+sample_data(sedg.all.1.r)$c_n_ratio+ sample_data(sedg.all.1.r)$qudo + sample_data(sedg.all.1.r)$quag +sample_data(sedg.all.1.r)$pisa +sample_data(sedg.all.1.r)$percent_soil_moisture)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.2.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.2.r)$p_h+sample_data(sedg.all.2.r)$c_n_ratio+ sample_data(sedg.all.2.r)$qudo + sample_data(sedg.all.2.r)$quag +sample_data(sedg.all.2.r)$pisa +sample_data(sedg.all.2.r)$percent_soil_moisture)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.3.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.3.r)$p_h+sample_data(sedg.all.3.r)$c_n_ratio+ sample_data(sedg.all.3.r)$qudo + sample_data(sedg.all.3.r)$quag +sample_data(sedg.all.3.r)$pisa +sample_data(sedg.all.3.r)$percent_soil_moisture)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.4.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.all.4.r)$p_h+sample_data(sedg.all.4.r)$c_n_ratio+ sample_data(sedg.all.4.r)$qudo + sample_data(sedg.all.4.r)$quag + sample_data(sedg.all.4.r)$percent_soil_moisture)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.1.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.1.r)$p_h+sample_data(sedg.ect.1.r)$c_n_ratio+ sample_data(sedg.ect.1.r)$qudo + sample_data(sedg.ect.1.r)$quag +sample_data(sedg.ect.1.r)$pisa +sample_data(sedg.ect.1.r)$percent_soil_moisture)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.2.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.2.r)$p_h+sample_data(sedg.ect.2.r)$c_n_ratio+ sample_data(sedg.ect.2.r)$qudo + sample_data(sedg.ect.2.r)$quag +sample_data(sedg.ect.2.r)$pisa +sample_data(sedg.ect.2.r)$percent_soil_moisture)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.3.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.3.r)$p_h+sample_data(sedg.ect.3.r)$c_n_ratio+ sample_data(sedg.ect.3.r)$qudo + sample_data(sedg.ect.3.r)$quag +sample_data(sedg.ect.3.r)$pisa +sample_data(sedg.ect.3.r)$percent_soil_moisture)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.4.r, method = "bray")
+adonis(sedg_dist_matrix~sample_data(sedg.ect.4.r)$p_h+sample_data(sedg.ect.4.r)$c_n_ratio+ sample_data(sedg.ect.4.r)$qudo + sample_data(sedg.ect.4.r)$quag + sample_data(sedg.ect.4.r)$percent_soil_moisture)
+
+```
+```{r make new sample tables, message=FALSE, warning= FALSE}
+st.all.0.d <- as_tibble(sample_data(sedg.all.0.d))
+st.all.1.d <- as_tibble(sample_data(sedg.all.1.d))
+st.all.2.d <- as_tibble(sample_data(sedg.all.2.d))
+st.all.3.d <- as_tibble(sample_data(sedg.all.3.d))
+st.all.4.d <- as_tibble(sample_data(sedg.all.4.d))
+
+st.all.0.r <- as_tibble(sample_data(sedg.all.0.r))
+st.all.1.r <- as_tibble(sample_data(sedg.all.1.r))
+st.all.2.r <- as_tibble(sample_data(sedg.all.2.r))
+st.all.3.r <- as_tibble(sample_data(sedg.all.3.r))
+st.all.4.r <- as_tibble(sample_data(sedg.all.4.r))
+
+st.sym.0.d <- as_tibble(sample_data(sedg.sym.0.d))
+st.sym.1.d <- as_tibble(sample_data(sedg.sym.1.d))
+st.sym.2.d <- as_tibble(sample_data(sedg.sym.2.d))
+st.sym.3.d <- as_tibble(sample_data(sedg.sym.3.d))
+st.sym.4.d <- as_tibble(sample_data(sedg.sym.4.d))
+
+st.sym.0.r <- as_tibble(sample_data(sedg.sym.0.r))
+st.sym.1.r <- as_tibble(sample_data(sedg.sym.1.r))
+st.sym.2.r <- as_tibble(sample_data(sedg.sym.2.r))
+st.sym.3.r <- as_tibble(sample_data(sedg.sym.3.r))
+st.sym.4.r <- as_tibble(sample_data(sedg.sym.4.r))
+
+st.ect.0.d <- as_tibble(sample_data(sedg.ect.0.d))
+st.ect.1.d <- as_tibble(sample_data(sedg.ect.1.d))
+st.ect.2.d <- as_tibble(sample_data(sedg.ect.2.d))
+st.ect.3.d <- as_tibble(sample_data(sedg.ect.3.d))
+st.ect.4.d <- as_tibble(sample_data(sedg.ect.4.d))
+
+st.ect.0.r <- as_tibble(sample_data(sedg.ect.0.r))
+st.ect.1.r <- as_tibble(sample_data(sedg.ect.1.r))
+st.ect.2.r <- as_tibble(sample_data(sedg.ect.2.r))
+st.ect.3.r <- as_tibble(sample_data(sedg.ect.3.r))
+st.ect.4.r <- as_tibble(sample_data(sedg.ect.4.r))
+
+st.sap.0.d <- as_tibble(sample_data(sedg.sap.0.d))
+st.sap.1.d <- as_tibble(sample_data(sedg.sap.1.d))
+st.sap.2.d <- as_tibble(sample_data(sedg.sap.2.d))
+st.sap.3.d <- as_tibble(sample_data(sedg.sap.3.d))
+st.sap.4.d <- as_tibble(sample_data(sedg.sap.4.d))
+
+st.sap.0.r <- as_tibble(sample_data(sedg.sap.0.r))
+st.sap.1.r <- as_tibble(sample_data(sedg.sap.1.r))
+st.sap.2.r <- as_tibble(sample_data(sedg.sap.2.r))
+st.sap.3.r <- as_tibble(sample_data(sedg.sap.3.r))
+st.sap.4.r <- as_tibble(sample_data(sedg.sap.4.r))
+```
+
+
+
+###add diversity metrics to dfs
+```{r diversity data}
+#all
+st.all.0.d$s.diversity <-diversity(t(otu_table(sedg.all.0.d)))
+st.all.0.d$a.diversity <- specnumber(t(otu_table(sedg.all.0.d)))
+st.all.1.d$s.diversity <-diversity(t(otu_table(sedg.all.1.d)))
+st.all.1.d$a.diversity <- specnumber(t(otu_table(sedg.all.1.d)))
+st.all.2.d$s.diversity <-diversity(t(otu_table(sedg.all.2.d)))
+st.all.2.d$a.diversity <- specnumber(t(otu_table(sedg.all.2.d)))
+st.all.3.d$s.diversity <-diversity(t(otu_table(sedg.all.3.d)))
+st.all.3.d$a.diversity <- specnumber(t(otu_table(sedg.all.3.d)))
+st.all.4.d$s.diversity <-diversity(t(otu_table(sedg.all.4.d)))
+st.all.4.d$a.diversity <- specnumber(t(otu_table(sedg.all.4.d)))
+
+st.all.0.r$s.diversity <-diversity(t(otu_table(sedg.all.0.r)))
+st.all.0.r$a.diversity <- specnumber(t(otu_table(sedg.all.0.r)))
+st.all.1.r$s.diversity <-diversity(t(otu_table(sedg.all.1.r)))
+st.all.1.r$a.diversity <- specnumber(t(otu_table(sedg.all.1.r)))
+st.all.2.r$s.diversity <-diversity(t(otu_table(sedg.all.2.r)))
+st.all.2.r$a.diversity <- specnumber(t(otu_table(sedg.all.2.r)))
+st.all.3.r$s.diversity <-diversity(t(otu_table(sedg.all.3.r)))
+st.all.3.r$a.diversity <- specnumber(t(otu_table(sedg.all.3.r)))
+st.all.4.r$s.diversity <-diversity(t(otu_table(sedg.all.4.r)))
+st.all.4.r$a.diversity <- specnumber(t(otu_table(sedg.all.4.r)))
+
+#sym
+st.sym.0.d$s.diversity <-diversity(t(otu_table(sedg.sym.0.d)))
+st.sym.0.d$a.diversity <- specnumber(t(otu_table(sedg.sym.0.d)))
+st.sym.1.d$s.diversity <-diversity(t(otu_table(sedg.sym.1.d)))
+st.sym.1.d$a.diversity <- specnumber(t(otu_table(sedg.sym.1.d)))
+st.sym.2.d$s.diversity <-diversity(t(otu_table(sedg.sym.2.d)))
+st.sym.2.d$a.diversity <- specnumber(t(otu_table(sedg.sym.2.d)))
+st.sym.3.d$s.diversity <-diversity(t(otu_table(sedg.sym.3.d)))
+st.sym.3.d$a.diversity <- specnumber(t(otu_table(sedg.sym.3.d)))
+st.sym.4.d$s.diversity <-diversity(t(otu_table(sedg.sym.4.d)))
+st.sym.4.d$a.diversity <- specnumber(t(otu_table(sedg.sym.4.d)))
+
+st.sym.0.r$s.diversity <-diversity(t(otu_table(sedg.sym.0.r)))
+st.sym.0.r$a.diversity <- specnumber(t(otu_table(sedg.sym.0.r)))
+st.sym.1.r$s.diversity <-diversity(t(otu_table(sedg.sym.1.r)))
+st.sym.1.r$a.diversity <- specnumber(t(otu_table(sedg.sym.1.r)))
+st.sym.2.r$s.diversity <-diversity(t(otu_table(sedg.sym.2.r)))
+st.sym.2.r$a.diversity <- specnumber(t(otu_table(sedg.sym.2.r)))
+st.sym.3.r$s.diversity <-diversity(t(otu_table(sedg.sym.3.r)))
+st.sym.3.r$a.diversity <- specnumber(t(otu_table(sedg.sym.3.r)))
+st.sym.4.r$s.diversity <-diversity(t(otu_table(sedg.sym.4.r)))
+st.sym.4.r$a.diversity <- specnumber(t(otu_table(sedg.sym.4.r)))
+
+#ect
+st.ect.0.d$s.diversity <-diversity(t(otu_table(sedg.ect.0.d)))
+st.ect.0.d$a.diversity <- specnumber(t(otu_table(sedg.ect.0.d)))
+st.ect.1.d$s.diversity <-diversity(t(otu_table(sedg.ect.1.d)))
+st.ect.1.d$a.diversity <- specnumber(t(otu_table(sedg.ect.1.d)))
+st.ect.2.d$s.diversity <-diversity(t(otu_table(sedg.ect.2.d)))
+st.ect.2.d$a.diversity <- specnumber(t(otu_table(sedg.ect.2.d)))
+st.ect.3.d$s.diversity <-diversity(t(otu_table(sedg.ect.3.d)))
+st.ect.3.d$a.diversity <- specnumber(t(otu_table(sedg.ect.3.d)))
+st.ect.4.d$s.diversity <-diversity(t(otu_table(sedg.ect.4.d)))
+st.ect.4.d$a.diversity <- specnumber(t(otu_table(sedg.ect.4.d)))
+
+st.ect.0.r$s.diversity <-diversity(t(otu_table(sedg.ect.0.r)))
+st.ect.0.r$a.diversity <- specnumber(t(otu_table(sedg.ect.0.r)))
+st.ect.1.r$s.diversity <-diversity(t(otu_table(sedg.ect.1.r)))
+st.ect.1.r$a.diversity <- specnumber(t(otu_table(sedg.ect.1.r)))
+st.ect.2.r$s.diversity <-diversity(t(otu_table(sedg.ect.2.r)))
+st.ect.2.r$a.diversity <- specnumber(t(otu_table(sedg.ect.2.r)))
+st.ect.3.r$s.diversity <-diversity(t(otu_table(sedg.ect.3.r)))
+st.ect.3.r$a.diversity <- specnumber(t(otu_table(sedg.ect.3.r)))
+st.ect.4.r$s.diversity <-diversity(t(otu_table(sedg.ect.4.r)))
+st.ect.4.r$a.diversity <- specnumber(t(otu_table(sedg.ect.4.r)))
+
+#sap
+st.sap.0.d$s.diversity <-diversity(t(otu_table(sedg.sap.0.d)))
+st.sap.0.d$a.diversity <- specnumber(t(otu_table(sedg.sap.0.d)))
+st.sap.1.d$s.diversity <-diversity(t(otu_table(sedg.sap.1.d)))
+st.sap.1.d$a.diversity <- specnumber(t(otu_table(sedg.sap.1.d)))
+st.sap.2.d$s.diversity <-diversity(t(otu_table(sedg.sap.2.d)))
+st.sap.2.d$a.diversity <- specnumber(t(otu_table(sedg.sap.2.d)))
+st.sap.3.d$s.diversity <-diversity(t(otu_table(sedg.sap.3.d)))
+st.sap.3.d$a.diversity <- specnumber(t(otu_table(sedg.sap.3.d)))
+st.sap.4.d$s.diversity <-diversity(t(otu_table(sedg.sap.4.d)))
+st.sap.4.d$a.diversity <- specnumber(t(otu_table(sedg.sap.4.d)))
+
+st.sap.0.r$s.diversity <-diversity(t(otu_table(sedg.sap.0.r)))
+st.sap.0.r$a.diversity <- specnumber(t(otu_table(sedg.sap.0.r)))
+st.sap.1.r$s.diversity <-diversity(t(otu_table(sedg.sap.1.r)))
+st.sap.1.r$a.diversity <- specnumber(t(otu_table(sedg.sap.1.r)))
+st.sap.2.r$s.diversity <-diversity(t(otu_table(sedg.sap.2.r)))
+st.sap.2.r$a.diversity <- specnumber(t(otu_table(sedg.sap.2.r)))
+st.sap.3.r$s.diversity <-diversity(t(otu_table(sedg.sap.3.r)))
+st.sap.3.r$a.diversity <- specnumber(t(otu_table(sedg.sap.3.r)))
+st.sap.4.r$s.diversity <-diversity(t(otu_table(sedg.sap.4.r)))
+st.sap.4.r$a.diversity <- specnumber(t(otu_table(sedg.sap.4.r)))
+
+```
+
+
+###Selecting subset of env factors with highest correlation to each data subset?
+```{r transect bioenv() parameter selection}
+sedg_dist_matrix <- phyloseq::distance(sedg.all.1.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.all.1.r)$p_h+sample_data(sedg.all.1.r)$c_n_ratio+ sample_data(sedg.all.1.r)$qudo + sample_data(sedg.all.1.r)$quag)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.1.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.ect.1.r)$p_h+sample_data(sedg.ect.1.r)$c_n_ratio+ sample_data(sedg.ect.1.r)$qudo + sample_data(sedg.ect.1.r)$quag)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.2.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.all.2.r)$p_h+sample_data(sedg.all.2.r)$c_n_ratio+ sample_data(sedg.all.2.r)$qudo + sample_data(sedg.all.2.r)$quag +sample_data(sedg.all.2.r)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.2.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.ect.2.r)$p_h+sample_data(sedg.ect.2.r)$c_n_ratio+ sample_data(sedg.ect.2.r)$qudo + sample_data(sedg.ect.2.r)$quag +sample_data(sedg.ect.2.r)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.3.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.all.3.r)$p_h+sample_data(sedg.all.3.r)$c_n_ratio+ sample_data(sedg.all.3.r)$qudo + sample_data(sedg.all.3.r)$quag)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.3.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.ect.3.r)$p_h+sample_data(sedg.ect.3.r)$c_n_ratio+ sample_data(sedg.ect.3.r)$qudo + sample_data(sedg.ect.3.r)$quag)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.4.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.all.4.r)$p_h+sample_data(sedg.all.4.r)$c_n_ratio+ sample_data(sedg.all.4.r)$qudo + sample_data(sedg.all.4.r)$quag +sample_data(sedg.all.4.r)$pisa)
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.4.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.ect.4.r)$p_h+sample_data(sedg.ect.4.r)$c_n_ratio+ sample_data(sedg.ect.4.r)$qudo + sample_data(sedg.ect.4.r)$quag +sample_data(sedg.ect.4.r)$pisa)
+
+```
+
+##bioenv() parameter selection
+```{r full set bioenv() parameter selection}
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.0.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.ect.0.r)$p_h+sample_data(sedg.ect.0.r)$c_n_ratio+ sample_data(sedg.ect.0.r)$qudo + sample_data(sedg.ect.0.r)$quag +sample_data(sedg.ect.0.r)$pisa +sample_data(sedg.ect.0.r)$percent_soil_moisture, metric = "euclidean")
+
+sedg_dist_matrix <- phyloseq::distance(sedg.ect.0.d, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.ect.0.d)$p_h+sample_data(sedg.ect.0.d)$c_n_ratio+ sample_data(sedg.ect.0.d)$qudo + sample_data(sedg.ect.0.d)$quag +sample_data(sedg.ect.0.d)$pisa +sample_data(sedg.ect.0.d)$percent_soil_moisture, metric = "euclidean")
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.0.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.all.0.r)$p_h+sample_data(sedg.all.0.r)$c_n_ratio+ sample_data(sedg.all.0.r)$qudo + sample_data(sedg.all.0.r)$quag +sample_data(sedg.all.0.r)$pisa +sample_data(sedg.all.0.r)$percent_soil_moisture, metric = "euclidean")
+
+sedg_dist_matrix <- phyloseq::distance(sedg.all.0.d, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.all.0.d)$p_h+sample_data(sedg.all.0.d)$c_n_ratio+ sample_data(sedg.all.0.d)$qudo + sample_data(sedg.all.0.d)$quag +sample_data(sedg.all.0.d)$pisa +sample_data(sedg.all.0.d)$percent_soil_moisture, metric = "euclidean")
+
+sedg_dist_matrix <- phyloseq::distance(sedg.sap.0.r, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.sap.0.r)$p_h+sample_data(sedg.sap.0.r)$c_n_ratio+ sample_data(sedg.sap.0.r)$qudo + sample_data(sedg.sap.0.r)$quag +sample_data(sedg.sap.0.r)$pisa +sample_data(sedg.sap.0.r)$percent_soil_moisture, metric = "euclidean")
+
+sedg_dist_matrix <- phyloseq::distance(sedg.sap.0.d, method = "bray")
+bioenv(sedg_dist_matrix~sample_data(sedg.sap.0.d)$p_h+sample_data(sedg.sap.0.d)$c_n_ratio+ sample_data(sedg.sap.0.d)$qudo + sample_data(sedg.sap.0.d)$quag + sample_data(sedg.sap.0.d)$pisa +sample_data(sedg.sap.0.d)$percent_soil_moisture, metric = "euclidean")
+```
+
+
+#Dissimilarity X Dissimilarity 
+```{r rna diss^2 by transect, warning=FALSE}
+all.env.diss.0.r <- as.tibble(sample_data(sedg.all.0.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+all.env.diss.1.r <- as.tibble(sample_data(sedg.all.1.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+all.env.diss.2.r <- as.tibble(sample_data(sedg.all.2.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+all.env.diss.3.r <- as.tibble(sample_data(sedg.all.3.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+all.env.diss.4.r <- as.tibble(sample_data(sedg.all.4.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, 
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+
+all.env.diss.mat.0.r <- vegdist((data.matrix(all.env.diss.0.r)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.1.r <- vegdist((data.matrix(all.env.diss.1.r)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.2.r <- vegdist((data.matrix(all.env.diss.2.r)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.3.r <- vegdist((data.matrix(all.env.diss.3.r)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.4.r <- vegdist((data.matrix(all.env.diss.4.r)), method = "bray", na.rm = TRUE)
+
+all.otu.diss.mat.0.r <- vegdist(t(data.matrix(otu_table(sedg.all.0.r))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.1.r <- vegdist(t(data.matrix(otu_table(sedg.all.1.r))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.2.r <- vegdist(t(data.matrix(otu_table(sedg.all.2.r))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.3.r <- vegdist(t(data.matrix(otu_table(sedg.all.3.r))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.4.r <- vegdist(t(data.matrix(otu_table(sedg.all.4.r))), method = "bray", na.rm = TRUE)
+
+
+sym.env.diss.0.r <- as.tibble(sample_data(sedg.sym.0.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sym.env.diss.1.r <- as.tibble(sample_data(sedg.sym.1.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+sym.env.diss.2.r <- as.tibble(sample_data(sedg.sym.2.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sym.env.diss.3.r <- as.tibble(sample_data(sedg.sym.3.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sym.env.diss.4.r <- as.tibble(sample_data(sedg.sym.4.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, 
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sym.env.diss.mat.0.r <- vegdist((data.matrix(sym.env.diss.0.r)), method = "bray", na.rm = TRUE)
+sym.env.diss.mat.1.r <- vegdist((data.matrix(sym.env.diss.1.r)), method = "bray", na.rm = TRUE)
+sym.env.diss.mat.2.r <- vegdist((data.matrix(sym.env.diss.2.r)), method = "bray", na.rm = TRUE)
+sym.env.diss.mat.3.r <- vegdist((data.matrix(sym.env.diss.3.r)), method = "bray", na.rm = TRUE)
+sym.env.diss.mat.4.r <- vegdist((data.matrix(sym.env.diss.4.r)), method = "bray", na.rm = TRUE)
+
+sym.otu.diss.mat.0.r <- vegdist(t(data.matrix(otu_table(sedg.sym.0.r))), method = "bray", na.rm = TRUE)
+sym.otu.diss.mat.1.r <- vegdist(t(data.matrix(otu_table(sedg.sym.1.r))), method = "bray", na.rm = TRUE)
+sym.otu.diss.mat.2.r <- vegdist(t(data.matrix(otu_table(sedg.sym.2.r))), method = "bray", na.rm = TRUE)
+sym.otu.diss.mat.3.r <- vegdist(t(data.matrix(otu_table(sedg.sym.3.r))), method = "bray", na.rm = TRUE)
+sym.otu.diss.mat.4.r <- vegdist(t(data.matrix(otu_table(sedg.sym.4.r))), method = "bray", na.rm = TRUE)
+
+
+ect.env.diss.0.r <- as.tibble(sample_data(sedg.ect.0.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+ect.env.diss.1.r <- as.tibble(sample_data(sedg.ect.1.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+ect.env.diss.2.r <- as.tibble(sample_data(sedg.ect.2.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+ect.env.diss.3.r <- as.tibble(sample_data(sedg.ect.3.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+ect.env.diss.4.r <- as.tibble(sample_data(sedg.ect.4.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, 
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+ect.env.diss.mat.0.r <- vegdist((data.matrix(ect.env.diss.0.r)), method = "bray", na.rm = TRUE)
+ect.env.diss.mat.1.r <- vegdist((data.matrix(ect.env.diss.1.r)), method = "bray", na.rm = TRUE)
+ect.env.diss.mat.2.r <- vegdist((data.matrix(ect.env.diss.2.r)), method = "bray", na.rm = TRUE)
+ect.env.diss.mat.3.r <- vegdist((data.matrix(ect.env.diss.3.r)), method = "bray", na.rm = TRUE)
+ect.env.diss.mat.4.r <- vegdist((data.matrix(ect.env.diss.4.r)), method = "bray", na.rm = TRUE)
+
+ect.otu.diss.mat.0.r <- vegdist(t(data.matrix(otu_table(sedg.ect.0.r))), method = "bray", na.rm = TRUE)
+ect.otu.diss.mat.1.r <- vegdist(t(data.matrix(otu_table(sedg.ect.1.r))), method = "bray", na.rm = TRUE)
+ect.otu.diss.mat.2.r <- vegdist(t(data.matrix(otu_table(sedg.ect.2.r))), method = "bray", na.rm = TRUE)
+ect.otu.diss.mat.3.r <- vegdist(t(data.matrix(otu_table(sedg.ect.3.r))), method = "bray", na.rm = TRUE)
+ect.otu.diss.mat.4.r <- vegdist(t(data.matrix(otu_table(sedg.ect.4.r))), method = "bray", na.rm = TRUE)
+
+
+sap.env.diss.0.r <- as.tibble(sample_data(sedg.sap.0.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sap.env.diss.1.r <- as.tibble(sample_data(sedg.sap.1.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sap.env.diss.2.r <- as.tibble(sample_data(sedg.sap.2.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sap.env.diss.3.r <- as.tibble(sample_data(sedg.sap.3.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+sap.env.diss.4.r <- as.tibble(sample_data(sedg.sap.4.r)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, 
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sap.env.diss.mat.0.r <- vegdist((data.matrix(sap.env.diss.0.r)), method = "bray", na.rm = TRUE)
+sap.env.diss.mat.1.r <- vegdist((data.matrix(sap.env.diss.1.r)), method = "bray", na.rm = TRUE)
+sap.env.diss.mat.2.r <- vegdist((data.matrix(sap.env.diss.2.r)), method = "bray", na.rm = TRUE)
+sap.env.diss.mat.3.r <- vegdist((data.matrix(sap.env.diss.3.r)), method = "bray", na.rm = TRUE)
+sap.env.diss.mat.4.r <- vegdist((data.matrix(sap.env.diss.4.r)), method = "bray", na.rm = TRUE)
+
+sap.otu.diss.mat.0.r <- vegdist(t(data.matrix(otu_table(sedg.sap.0.r))), method = "bray", na.rm = TRUE)
+sap.otu.diss.mat.1.r <- vegdist(t(data.matrix(otu_table(sedg.sap.1.r))), method = "bray", na.rm = TRUE)
+sap.otu.diss.mat.2.r <- vegdist(t(data.matrix(otu_table(sedg.sap.2.r))), method = "bray", na.rm = TRUE)
+sap.otu.diss.mat.3.r <- vegdist(t(data.matrix(otu_table(sedg.sap.3.r))), method = "bray", na.rm = TRUE)
+sap.otu.diss.mat.4.r <- vegdist(t(data.matrix(otu_table(sedg.sap.4.r))), method = "bray", na.rm = TRUE)
+```
+
+```{r dna diss^2 by transect, warning=FALSE}
+all.env.diss.0.d <- as.tibble(sample_data(sedg.all.0.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+all.env.diss.1.d <- as.tibble(sample_data(sedg.all.1.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+all.env.diss.2.d <- as.tibble(sample_data(sedg.all.2.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+all.env.diss.3.d <- as.tibble(sample_data(sedg.all.3.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+all.env.diss.4.d <- as.tibble(sample_data(sedg.all.4.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, 
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+
+all.env.diss.mat.0.d <- vegdist((data.matrix(all.env.diss.0.d)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.1.d <- vegdist((data.matrix(all.env.diss.1.d)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.2.d <- vegdist((data.matrix(all.env.diss.2.d)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.3.d <- vegdist((data.matrix(all.env.diss.3.d)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.4.d <- vegdist((data.matrix(all.env.diss.4.d)), method = "bray", na.rm = TRUE)
+
+all.otu.diss.mat.0.d <- vegdist(t(data.matrix(otu_table(sedg.all.0.d))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.1.d <- vegdist(t(data.matrix(otu_table(sedg.all.1.d))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.2.d <- vegdist(t(data.matrix(otu_table(sedg.all.2.d))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.3.d <- vegdist(t(data.matrix(otu_table(sedg.all.3.d))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.4.d <- vegdist(t(data.matrix(otu_table(sedg.all.4.d))), method = "bray", na.rm = TRUE)
+
+
+sym.env.diss.0.d <- as.tibble(sample_data(sedg.sym.0.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sym.env.diss.1.d <- as.tibble(sample_data(sedg.sym.1.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sym.env.diss.2.d <- as.tibble(sample_data(sedg.sym.2.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sym.env.diss.3.d <- as.tibble(sample_data(sedg.sym.3.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+sym.env.diss.4.d <- as.tibble(sample_data(sedg.sym.4.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, 
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+
+sym.env.diss.mat.0.d <- vegdist((data.matrix(sym.env.diss.0.d)), method = "bray", na.rm = TRUE)
+sym.env.diss.mat.1.d <- vegdist((data.matrix(sym.env.diss.1.d)), method = "bray", na.rm = TRUE)
+sym.env.diss.mat.2.d <- vegdist((data.matrix(sym.env.diss.2.d)), method = "bray", na.rm = TRUE)
+sym.env.diss.mat.3.d <- vegdist((data.matrix(sym.env.diss.3.d)), method = "bray", na.rm = TRUE)
+sym.env.diss.mat.4.d <- vegdist((data.matrix(sym.env.diss.4.d)), method = "bray", na.rm = TRUE)
+
+sym.otu.diss.mat.0.d <- vegdist(t(data.matrix(otu_table(sedg.sym.0.d))), method = "bray", na.rm = TRUE)
+sym.otu.diss.mat.1.d <- vegdist(t(data.matrix(otu_table(sedg.sym.1.d))), method = "bray", na.rm = TRUE)
+sym.otu.diss.mat.2.d <- vegdist(t(data.matrix(otu_table(sedg.sym.2.d))), method = "bray", na.rm = TRUE)
+sym.otu.diss.mat.3.d <- vegdist(t(data.matrix(otu_table(sedg.sym.3.d))), method = "bray", na.rm = TRUE)
+sym.otu.diss.mat.4.d <- vegdist(t(data.matrix(otu_table(sedg.sym.4.d))), method = "bray", na.rm = TRUE)
+
+
+ect.env.diss.0.d <- as.tibble(sample_data(sedg.ect.0.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+ect.env.diss.1.d <- as.tibble(sample_data(sedg.ect.1.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+ect.env.diss.2.d <- as.tibble(sample_data(sedg.ect.2.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+ect.env.diss.3.d <- as.tibble(sample_data(sedg.ect.3.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+ect.env.diss.4.d <- as.tibble(sample_data(sedg.ect.4.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, 
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+ect.env.diss.mat.0.d <- vegdist((data.matrix(ect.env.diss.0.d)), method = "bray", na.rm = TRUE)
+ect.env.diss.mat.1.d <- vegdist((data.matrix(ect.env.diss.1.d)), method = "bray", na.rm = TRUE)
+ect.env.diss.mat.2.d <- vegdist((data.matrix(ect.env.diss.2.d)), method = "bray", na.rm = TRUE)
+ect.env.diss.mat.3.d <- vegdist((data.matrix(ect.env.diss.3.d)), method = "bray", na.rm = TRUE)
+ect.env.diss.mat.4.d <- vegdist((data.matrix(ect.env.diss.4.d)), method = "bray", na.rm = TRUE)
+
+ect.otu.diss.mat.0.d <- vegdist(t(data.matrix(otu_table(sedg.ect.0.d))), method = "bray", na.rm = TRUE)
+ect.otu.diss.mat.1.d <- vegdist(t(data.matrix(otu_table(sedg.ect.1.d))), method = "bray", na.rm = TRUE)
+ect.otu.diss.mat.2.d <- vegdist(t(data.matrix(otu_table(sedg.ect.2.d))), method = "bray", na.rm = TRUE)
+ect.otu.diss.mat.3.d <- vegdist(t(data.matrix(otu_table(sedg.ect.3.d))), method = "bray", na.rm = TRUE)
+ect.otu.diss.mat.4.d <- vegdist(t(data.matrix(otu_table(sedg.ect.4.d))), method = "bray", na.rm = TRUE)
+
+
+sap.env.diss.0.d <- as.tibble(sample_data(sedg.sap.0.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sap.env.diss.1.d <- as.tibble(sample_data(sedg.sap.1.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+sap.env.diss.2.d <- as.tibble(sample_data(sedg.sap.2.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long)
+
+sap.env.diss.3.d <- as.tibble(sample_data(sedg.sap.3.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id",
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg,
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sap.env.diss.4.d <- as.tibble(sample_data(sedg.sap.4.d)) %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect"= "position_along_transect_m")) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, 
+                quag, qudo, pisa, percent_soil_moisture.y, lat, long) 
+
+sap.env.diss.mat.0.d <- vegdist((data.matrix(sap.env.diss.0.d)), method = "bray", na.rm = TRUE)
+sap.env.diss.mat.1.d <- vegdist((data.matrix(sap.env.diss.1.d)), method = "bray", na.rm = TRUE)
+sap.env.diss.mat.2.d <- vegdist((data.matrix(sap.env.diss.2.d)), method = "bray", na.rm = TRUE)
+sap.env.diss.mat.3.d <- vegdist((data.matrix(sap.env.diss.3.d)), method = "bray", na.rm = TRUE)
+sap.env.diss.mat.4.d <- vegdist((data.matrix(sap.env.diss.4.d)), method = "bray", na.rm = TRUE)
+
+sap.otu.diss.mat.0.d <- vegdist(t(data.matrix(otu_table(sedg.sap.0.d))), method = "bray", na.rm = TRUE)
+sap.otu.diss.mat.1.d <- vegdist(t(data.matrix(otu_table(sedg.sap.1.d))), method = "bray", na.rm = TRUE)
+sap.otu.diss.mat.2.d <- vegdist(t(data.matrix(otu_table(sedg.sap.2.d))), method = "bray", na.rm = TRUE)
+sap.otu.diss.mat.3.d <- vegdist(t(data.matrix(otu_table(sedg.sap.3.d))), method = "bray", na.rm = TRUE)
+sap.otu.diss.mat.4.d <- vegdist(t(data.matrix(otu_table(sedg.sap.4.d))), method = "bray", na.rm = TRUE)
+```
+
+
+```{r dissimilarity of both acid types, warning=FALSE}
+all.env.diss.1.b <- as.tibble(sample_data(sedg.all.1.b)) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, quag, qudo, pisa, percent_soil_moisture)
+all.env.diss.2.b <- as.tibble(sample_data(sedg.all.2.b)) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, quag, qudo, pisa, percent_soil_moisture)
+all.env.diss.3.b <- as.tibble(sample_data(sedg.all.3.b)) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, quag, qudo, pisa, percent_soil_moisture)
+all.env.diss.4.b <- as.tibble(sample_data(sedg.all.4.b)) %>% 
+  dplyr::select(c_n_ratio, total_change_capacity_meq_100_g, p_h, p_mg_kg, quag, qudo, pisa, percent_soil_moisture)
+
+
+all.env.diss.mat.1.b <- vegdist((data.matrix(all.env.diss.1.b)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.2.b <- vegdist((data.matrix(all.env.diss.2.b)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.3.b <- vegdist((data.matrix(all.env.diss.3.b)), method = "bray", na.rm = TRUE)
+all.env.diss.mat.4.b <- vegdist((data.matrix(all.env.diss.4.b)), method = "bray", na.rm = TRUE)
+
+all.otu.diss.mat.1.b <- vegdist(t(data.matrix(otu_table(sedg.all.1.b))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.2.b <- vegdist(t(data.matrix(otu_table(sedg.all.2.b))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.3.b <- vegdist(t(data.matrix(otu_table(sedg.all.3.b))), method = "bray", na.rm = TRUE)
+all.otu.diss.mat.4.b <- vegdist(t(data.matrix(otu_table(sedg.all.4.b))), method = "bray", na.rm = TRUE)
+
+```
+
+
+```{r}
+save.image(here("data", "otu_data_sedgwick.RData"))
+```
+
+
+
+

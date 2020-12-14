@@ -1,0 +1,1228 @@
+---
+title: "figure set"
+author: "Gabe Runte"
+date: "11/15/2020"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(tidyverse)
+library(phyloseq)
+library(pastecs)
+library(pander)
+library(metagenomeSeq)
+library(vegan)
+library(here)
+library(janitor)
+library(stats)
+library(lme4)
+library(lmerTest)
+library(gridExtra)
+library(kableExtra)
+library(gdm)
+library(calecopal)
+library(ggmap)
+library(cowplot)
+library(grid)
+library(agricolae)
+library(MuMIn)#r2 values for lmer
+library(lmerTest)
+library(ggpubr)
+library(rstatix)
+```
+
+```{r load in data, echo= FALSE}
+load(here("data", "otu_data_sedgwick.RData"))
+register_google(key = "AIzaSyA0YiGkcAmUuFuLtmepaG_nnGl4TIEvxgI")
+```
+
+
+```{r color setup, echo= FALSE, warning= FALSE, message=FALSE}
+all.dna.col <- cal_palette("lupinus")[5]
+all.rna.col <- cal_palette("lupinus")[1]
+ect.dna.col <- cal_palette("lupinus")[4]
+ect.rna.col <- cal_palette("lupinus")[2]
+
+rna.acc.col <- cal_palette("casj")[1]
+rna.acc.ci.col <- cal_palette("casj")[2]
+dna.acc.col <- cal_palette("casj")[5]
+dna.acc.ci.col <- cal_palette("casj")[4]
+
+rna.col <- cal_palette("figmtn")[3]
+dna.col <- cal_palette("figmtn")[4]
+
+oakiness.col <- cal_palette("sierra1", 4)[3]#cal_palette("wetland", 5)[2]
+pininess.col <- cal_palette("sierra1", 4)[1]#cal_palette("wetland", 5)[4]
+
+#transect.colors <- cal_palette("figmtn")[c(2,3,4,7)]
+transect.colors <- cal_palette("superbloom3")[c(1:3,6)]
+
+
+```
+
+## Figure 1: Site Description
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+#read in files
+samples<- read.csv(here("data", "douglasii_samples.csv"))
+neighbors<- read.csv(here("data", "douglasii_neighbors.csv"))
+neighbors$direction_of_transect<- NaN * neighbors$Transect_ID
+for( i in 1:length(neighbors$Transect_ID)){
+neighbors$direction_of_transect[i]<- if(neighbors$Transect_ID[i]==20.2001) {0} else { 
+  if(neighbors$Transect_ID[i]== 20.2002 ){135} else { if(neighbors$Transect_ID[i]==20.2003) {180} else {140}
+  }}
+}
+
+neighbors$Position_along_transect_cm <- neighbors$Position_along_transect_m*100
+neighbors$n.dir <- NaN * neighbors$Transect_ID
+
+for( i in 1:length(neighbors$Transect_ID)){
+  neighbors$n.dir[i] <- if(neighbors$Heading[i] =="L") {neighbors$direction_of_transect[i] + 270} 
+  else{ if(neighbors$Heading[i]=="R") {neighbors$direction_of_transect[i] +90} else{as.numeric(as.character(neighbors$Heading[i]))  }}
+}
+
+neighbors$xy.dist <- NaN*length(neighbors$Transect_ID)
+neighbors$n.norm<-   neighbors$n.dir -neighbors$direction_of_transect
+
+for( i in 1:length(neighbors$Transect_ID)){
+  neighbors$xy.dist[i]<- if(neighbors$n.norm[i]==90) 
+    {(-1 * neighbors$Dist_to_transect_cm[i])}
+  else{neighbors$Dist_to_transect_cm[i]}}
+
+neighbors$stem.area<- (0.5*neighbors$DBH)^2 * pi 
+
+#transect-specific neighbor sheets
+wt.n<- neighbors[neighbors$Transect_ID=="20.2001",] #water tower
+hh.n<- neighbors[neighbors$Transect_ID=="20.2002",] # holly's hollow
+ll.n<- neighbors[neighbors$Transect_ID=="20.2003",] # laura's ledge
+gg.n<- neighbors[neighbors$Transect_ID=="20.2004",] # gabe's glen
+
+t.names <- c("Transect 1","Transect 2", "Transect 3", "Transect 4" )
+names(t.names) <- c("20.2001", "20.2002", "20.2003", "20.2004")
+neighbors.labelled <- neighbors %>% 
+  mutate(transect.labelled = case_when(
+    Transect_ID == "20.2001" ~"Transect 1",
+    Transect_ID == "20.2002" ~"Transect 2",
+    Transect_ID == "20.2003" ~"Transect 3",
+    Transect_ID == "20.2004" ~"Transect 4"
+  ))
+neighbors.labelled.noceo <- neighbors.labelled %>% 
+  filter(Species_abbrev != "CEANOTHUS")
+```
+
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+
+ggplot(data= neighbors.labelled.noceo, aes(x=Position_along_transect_cm, y= xy.dist)) + 
+    geom_hline(yintercept = 0, size = 1, alpha= 0.6) +
+  geom_point(aes(col=Species_abbrev, size= DBH)) +
+  theme_classic() +
+  facet_wrap(~transect.labelled) +
+  scale_color_manual(values=cal_palette("sierra1", 4)[c(1,3,4)], name= "Species", labels= c( "P. sabiniana (PISA)", "Q. agrifolia (QUAG)", "Q. douglasii (QUDO)" )) +
+  scale_y_continuous(name = "Distance from transect (m)", 
+                     breaks = c(-1000, 0, 1000), labels = c("10","0", "10"), limits= c(-1500, 1500))+
+  scale_x_continuous(name = "Distance along transect (m)", 
+                     breaks = c(0, 1000, 2000, 3000), labels = c("0", "10","20", "30"), limits= c(-50, 3050)) +
+  scale_size_continuous("Stem diameter (cm)")
+#ggsave(here("figures", "polished", "transect_demographics.pdf"), width= 7, height= 5)
+```
+
+
+
+## Site map
+```{r, echo=FALSE, include= FALSE}
+sed.coord.relabeled <- sedg.coord %>% 
+  mutate(transect.labelled = case_when(
+    transect_id == "20.2001" ~"Transect 1",
+    transect_id == "20.2002" ~"Transect 2",
+    transect_id == "20.2003" ~"Transect 3",
+    transect_id == "20.2004" ~"Transect 4"
+  ))
+smap1 <- get_map(location= c(lon= mean(sedg.coord$long), lat=mean(sedg.coord$lat)), zoom = 18,
+        maptype = "satellite", scale= 2, color= "bw")
+
+
+
+smap1_transparent <- matrix(adjustcolor(smap1, alpha.f = 0.85), nrow = nrow(smap1))
+attributes(smap1_transparent) <- attributes(smap1)
+
+smap2 <- get_map(location= c(lon= -119.417931, lat=36.778259), zoom = 6,  maptype = "hybrid")
+
+smap2_transparent <- matrix(adjustcolor(smap2, alpha.f = 0.75), nrow = nrow(smap1))
+attributes(smap2_transparent) <- attributes(smap2)
+
+site.ca <- ggmap(smap2_transparent) +
+  geom_point(data=sed.coord.relabeled, aes(x=long, y=lat, color= as.factor(transect_id)), size= 1, color = "red", shape= 17)+
+  scale_color_manual(values=transect.colors) + 
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    legend.position = "none"
+  ) 
+site.ca
+```
+
+
+
+
+```{r, include= FALSE}
+site.map <- ggmap(smap1_transparent) +
+  geom_line(data=sed.coord.relabeled, aes(x=long, y=lat, color= as.factor(transect_id)), size= 2.5)+
+  geom_label(data=sed.coord.relabeled[sed.coord.relabeled$position_along_transect_m=="30",], 
+             aes(x=(long+0.0004), y=lat, color= as.factor(transect_id), label = transect.labelled)) +
+  scale_color_manual(values=transect.colors) + 
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    legend.position = "none"
+  )
+site.map
+```
+
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+
+site.map <- ggmap(smap1_transparent) +
+  geom_line(data=sed.coord.relabeled, aes(x=long, y=lat, color= as.factor(transect_id)), size= 2.5)+
+  geom_label(data=sed.coord.relabeled[sed.coord.relabeled$position_along_transect_m=="30",], 
+             aes(x=(long+0.0004), y=lat, color= as.factor(transect_id), label = transect.labelled)) +
+  scale_color_manual(values=transect.colors) + 
+    theme(
+    legend.position = "none"
+  )+ 
+  labs(
+    x= "Longitude",
+    y= "Latitude"
+  )+
+  inset(ggplotGrob(site.ca), xmin = -120.0598, xmax = -120.0588, 
+                       ymin = 34.7355, ymax = 34.7365)
+
+site.map
+#ggsave(here("figures", "polished", "site_map.pdf"), width= 5, height= 5) 
+```
+
+## Transect properties
+
+Plot with alpha scales by distance along transect.
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+st.all.0.r.relabeled <- st.all.0.r %>% 
+  mutate(transect.labelled = case_when(
+    site_tree_id_transect_id == "20.2001" ~"Transect 1",
+    site_tree_id_transect_id == "20.2002" ~"Transect 2",
+    site_tree_id_transect_id == "20.2003" ~"Transect 3",
+    site_tree_id_transect_id == "20.2004" ~"Transect 4"
+  ))
+
+
+#All using df:st.all.0.r -- takes all samples into acct. Env parameters do not vary btw RNA/DNA
+blankPlot <- ggplot()+geom_blank(aes(1,1)) + 
+  cowplot::theme_nothing()
+
+ph.transect.bulky <- ggplot(st.all.0.r.relabeled)+
+  geom_boxplot(aes(transect, p_h, fill= transect.labelled), outlier.alpha = 0)+
+  geom_jitter(aes(transect, p_h, alpha=dist_along_transect), width= 0.1 )+
+  scale_fill_manual(values= transect.colors, name= "Transect") +
+  scale_alpha_continuous(name="Distance along \ntransect (m)") +
+  theme_classic() +
+  labs( y= "pH",
+        x= "Transect") +
+  scale_x_discrete(labels= c("1", "2", "3", "4")) +
+  theme() + 
+  ylim(5.8, 8)
+
+transect.legend <- get_legend(ph.transect.bulky)
+
+ph.transect <- ph.transect.bulky +
+  theme(legend.position = "none")
+
+ph.hsd <- HSD.test(aov(p_h~transect, data= st.all.0.r.relabeled), "transect", group=T)
+ph.groups <- tibble(ph.hsd$groups) %>% 
+  mutate(transect = row.names(ph.hsd$groups))
+st.all.0.r.relabeled.summ <- st.all.0.r.relabeled %>% 
+  group_by(transect) %>% 
+  summarize(max.ph = mean(p_h)) %>% 
+  join(ph.groups)
+  
+
+ph.transect.stat <- ph.transect +
+  geom_text(data=st.all.0.r.relabeled.summ, aes(x=transect,y=max.ph + 0.8,label=groups),vjust=0)
+
+moisture.transect <- ggplot(st.all.0.r.relabeled)+
+  geom_boxplot(aes(transect, percent_soil_moisture, fill= transect.labelled), outlier.alpha = 0)+
+  geom_jitter(aes(transect, percent_soil_moisture, alpha=dist_along_transect), width= 0.1 )+
+  scale_fill_manual(values= transect.colors) +
+  theme_classic() +
+  labs( y= "Soil moisture (%)") +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+    )
+
+moisture.hsd <- HSD.test(aov(percent_soil_moisture~transect, data= st.all.0.r.relabeled), "transect", group=T)
+moisture.groups <- tibble(moisture.hsd$groups) %>% 
+  mutate(transect = row.names(moisture.hsd$groups))
+st.all.0.r.relabeled.summ.moisture <- st.all.0.r.relabeled %>% 
+  group_by(transect) %>% 
+  summarize(moisture = mean(percent_soil_moisture)) %>% 
+  join(moisture.groups)
+
+moisture.transect.stat <- moisture.transect +
+  geom_text(data=st.all.0.r.relabeled.summ.moisture, aes(x=transect,y=moisture + 10,label=groups),vjust=0)
+
+
+cn.transect <- ggplot(st.all.0.r.relabeled)+
+  geom_boxplot(aes(transect, c_n_ratio, fill= transect.labelled), outlier.alpha = 0)+
+  geom_jitter(aes(transect, c_n_ratio, alpha=dist_along_transect), width= 0.1 )+
+  scale_fill_manual(values= transect.colors) +
+  theme_classic() +
+  labs( y= "C:N ratio",
+        x= "Transect") +
+  scale_x_discrete(labels= c("1", "2", "3", "4")) +
+  theme(legend.position = "none"
+    )
+
+cn.hsd <- HSD.test(aov(c_n_ratio~transect, data= st.all.0.r.relabeled), "transect", group=T)
+
+cn.groups <- tibble(cn.hsd$groups) %>% 
+  mutate(transect = row.names(cn.hsd$groups))
+st.all.0.r.relabeled.summ.cn <- st.all.0.r.relabeled %>% 
+  group_by(transect) %>% 
+  summarize(cn = mean(c_n_ratio)) %>% 
+  join(cn.groups)
+
+cn.transect.stat <- cn.transect +
+  geom_text(data=st.all.0.r.relabeled.summ.cn, aes(x=transect,y=cn + 3,label=groups),vjust=0) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),)
+
+
+#grid.arrange(ph.transect.stat, blankPlot, moisture.transect.stat, transect.legend, cn.transect.stat, blankPlot, nrow= 3, ncol=2, widths= (c(3,.8)), heights= c(1.5,1.5,1.7))
+
+
+
+```
+
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
+
+pisa.plot <- ggplot(st.all.0.r.relabeled)+
+  geom_boxplot(aes(transect, log(pisa), fill= transect.labelled), outlier.alpha = 0)+
+  geom_jitter(aes(transect, log(pisa), alpha=dist_along_transect), width= 0.1 )+
+  scale_fill_manual(values= transect.colors, name= "Transect") +
+  scale_alpha_continuous(name="Distance along \ntransect (m)") +
+  theme_classic() +
+  labs( y= "log(PISA)") +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+     legend.position = "none")
+
+pisa.hsd <- HSD.test(aov(pisa~transect, data= st.all.0.r.relabeled), "transect", group=T)
+pisa.groups <- tibble(pisa.hsd$groups) %>% 
+  mutate(transect = row.names(pisa.hsd$groups))
+pisa.tuk <- st.all.0.r.relabeled %>% 
+  group_by(transect) %>% 
+  summarize(mean.pisa = mean(pisa)) %>% 
+  join(ph.groups)
+
+pisa.plot.stat <- pisa.plot +
+  geom_text(data=pisa.tuk, aes(x=transect,y=mean.pisa -1,label=groups),vjust=0)+
+  ylim(-6, 0)
+  
+
+quag.plot <- ggplot(st.all.0.r.relabeled)+
+  geom_boxplot(aes(transect, log(quag), fill= transect.labelled), outlier.alpha = 0)+
+  geom_jitter(aes(transect, log(quag), alpha=dist_along_transect), width= 0.1 )+
+  scale_fill_manual(values= transect.colors, name= "Transect") +
+  scale_alpha_continuous(name="Distance along \ntransect (m)") +
+  theme_classic() +
+  labs( y= "log(QUAG)") +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none")
+
+quag.hsd <- HSD.test(aov(quag~transect, data= st.all.0.r.relabeled), "transect", group=T)
+quag.groups <- tibble(quag.hsd$groups) %>% 
+  mutate(transect = row.names(quag.hsd$groups))
+quag.tuk <- st.all.0.r.relabeled %>% 
+  group_by(transect) %>% 
+  summarize(mean.quag = mean(quag)) %>% 
+  join(ph.groups)
+
+quag.plot.stat <- quag.plot +
+  geom_text(data=quag.tuk, aes(x=transect,y=mean.quag -1,label=groups),vjust=0)+
+  ylim(-6, 0)
+
+qudo.plot <- ggplot(st.all.0.r.relabeled)+
+  geom_boxplot(aes(transect, log(qudo), fill= transect.labelled), outlier.alpha = 0)+
+  geom_jitter(aes(transect, log(qudo), alpha=dist_along_transect), width= 0.1 )+
+  scale_fill_manual(values= transect.colors, name= "Transect") +
+  scale_alpha_continuous(name="Distance along \ntransect (m)") +
+  theme_classic() +
+  labs( y= "log(QUDO)",
+        x= "Transect") +
+  scale_x_discrete(labels= c("1", "2", "3", "4")) +
+  theme(legend.position = "none")
+
+qudo.hsd <- HSD.test(aov(qudo~transect, data= st.all.0.r.relabeled), "transect", group=T)
+qudo.groups <- tibble(qudo.hsd$groups) %>% 
+  mutate(transect = row.names(qudo.hsd$groups))
+qudo.tuk <- st.all.0.r.relabeled %>% 
+  group_by(transect) %>% 
+  summarize(mean.qudo = mean(qudo)) %>% 
+  join(ph.groups)
+
+qudo.plot.stat <- qudo.plot +
+  geom_text(data=qudo.tuk, aes(x=transect,y=mean.qudo -1,label=groups),vjust=0) +
+  ylim(-6, 0)
+
+pisa.plot.title <- pisa.plot + labs(title= "Biotic")+
+  theme(plot.title = element_text(hjust = 0.5))
+ph.plot.title <- ph.transect.stat + labs(title= "Abiotic")+ 
+  theme(plot.title = element_text(hjust = 0.5))
+
+ transect_char_plot <- plot_grid(pisa.plot, moisture.transect.stat, blankPlot, quag.plot, cn.transect.stat, transect.legend, qudo.plot, ph.transect.stat, blankPlot,nrow= 3, ncol=3, rel_widths = c(3,3,1), heights= c(1.4,1.4,1.7), labels= c("a.", "d.", "", "b.", "e.", "", "c.", "f.", ""))
+ transect_char_plot
+transect_char_plot_nolabels <- plot_grid(pisa.plot.stat, moisture.transect.stat, blankPlot, quag.plot.stat, cn.transect.stat, transect.legend, qudo.plot.stat, ph.transect.stat, blankPlot,nrow= 3, ncol=3, rel_widths = c(3,3,1), heights= c(1.4,1.4,1.7))
+#ggsave(here("figures", "polished", "transect_char_nolabels.stat.pdf"), width= 7, height= 5)
+```
+
+
+```{r}
+phos.transect <- ggplot(st.all.0.r.relabeled)+
+  geom_boxplot(aes(transect, p_mg_kg, fill= transect.labelled), outlier.alpha = 0)+
+  geom_jitter(aes(transect, p_mg_kg, alpha=dist_along_transect), width= 0.1 )+
+  scale_fill_manual(values= transect.colors) +
+  theme_classic() +
+  labs( y= "P (mg/kg)") +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+    )
+
+phos.hsd <- HSD.test(aov(p_mg_kg~transect, data= st.all.0.r.relabeled), "transect", group=T)
+phos.groups <- tibble(phos.hsd$groups) %>% 
+  mutate(transect = row.names(phos.hsd$groups))
+st.all.0.r.relabeled.summ.phos <- st.all.0.r.relabeled %>% 
+  group_by(transect) %>% 
+  summarize(phos = mean(p_mg_kg)) %>% 
+  join(phos.groups)
+
+phos.transect.stat <- phos.transect +
+  geom_text(data=st.all.0.r.relabeled.summ.phos, aes(x=transect,y=phos + 30,label=groups),vjust=0) +
+  ylim(20, 90)
+
+nitr.transect <- ggplot(st.all.0.r.relabeled)+
+  geom_boxplot(aes(transect, nitrogen_percent, fill= transect.labelled), outlier.alpha = 0)+
+  geom_jitter(aes(transect, nitrogen_percent, alpha=dist_along_transect), width= 0.1 )+
+  scale_fill_manual(values= transect.colors) +
+  theme_classic() +
+  labs( y= "N (%)") +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+    )
+
+nitr.hsd <- HSD.test(aov(nitrogen_percent~transect, data= st.all.0.r.relabeled), "transect", group=T)
+nitr.groups <- tibble(nitr.hsd$groups) %>% 
+  mutate(transect = row.names(nitr.hsd$groups))
+st.all.0.r.relabeled.summ.nitr <- st.all.0.r.relabeled %>% 
+  group_by(transect) %>% 
+  summarize(nitr = mean(nitrogen_percent)) %>% 
+  join(nitr.groups)
+
+nitr.transect.stat <- nitr.transect +
+  geom_text(data=st.all.0.r.relabeled.summ.nitr, aes(x=transect,y=nitr + .2,label=groups),vjust=0)
+
+
+
+
+
+ transect_char_plot.phos <- plot_grid(pisa.plot, phos.transect.stat, blankPlot, quag.plot, cn.transect.stat, transect.legend, qudo.plot, ph.transect.stat, blankPlot,nrow= 3, ncol=3, rel_widths = c(3,3,1), heights= c(1.4,1.4,1.7), labels= c("a.", "d.", "", "b.", "e.", "", "c.", "f.", ""))
+ transect_char_plot.phos
+ #ggsave(here("figures", "polished", "transect_char_perm.pdf"), width= 7, height= 5)
+ 
+ 
+  transect_char_plot.phos.nolabels <- plot_grid(pisa.plot, phos.transect.stat, blankPlot, quag.plot, cn.transect.stat, transect.legend, qudo.plot, ph.transect.stat, blankPlot,nrow= 3, ncol=3, rel_widths = c(3,3,1), heights= c(1.4,1.4,1.7))
+ transect_char_plot.phos.nolabels
+ #ggsave(here("figures", "polished", "transect_char_perm_nolabels.pdf"), width= 7, height= 5)
+ 
+```
+
+
+```{r biotic/abiotic models, echo= FALSE, warning= FALSE, message=FALSE}
+ph.correlation <- cor.test(st.all.0.r$p_h, as.numeric(st.all.0.r$litter_depth_cm))
+cn.correlation <- cor.test(st.all.0.r$c_n_ratio, st.all.0.r$pisa)
+```
+
+
+
+# Paired dna/rna diversity boxplots
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+st.all.0.r.div <- st.all.0.r %>% 
+  mutate(acid = "RNA")
+st.all.0.d.div <- st.all.0.d %>% 
+  mutate(acid = "DNA")
+st.all.0.b.div <- bind_rows(st.all.0.r.div, st.all.0.d.div)
+  
+
+all.alpha.diversity.fig.bulky <- 
+  ggplot(st.all.0.b.div)+
+  geom_boxplot( aes(x=transect, y= a.diversity, fill= acid), outlier.alpha = 0) +
+  geom_point(aes(x=transect, y= a.diversity, alpha= dist_along_transect, fill= acid), 
+             position = position_jitterdodge(jitter.width= 0.1)) +
+  scale_alpha_continuous(name="Distance along \ntransect (m)") +
+  scale_fill_manual(name= "Nucleic acid \ntype", values= c(dna.col, rna.col)) +
+  theme_classic() +
+  labs(
+    x= "Transect",
+    y= "Spp. Richness"
+  ) +
+  scale_x_discrete(labels= c("T1", "T2", "T3", "T4"))+
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+    )
+
+acid.legend <- get_legend(all.alpha.diversity.fig.bulky)
+
+all.alpha.diversity.fig <- all.alpha.diversity.fig.bulky +
+  theme(legend.position = "none")
+
+all.shannon.diversity.fig <- 
+  ggplot(st.all.0.b.div)+
+  geom_boxplot( aes(x=transect, y= s.diversity, fill= acid), outlier.alpha = 0) +
+  geom_point(aes(x=transect, y= s.diversity, alpha= dist_along_transect, fill= acid), 
+             position = position_jitterdodge(jitter.width= 0.1)) +
+  scale_fill_manual(name= "Nucleic acid \ntype", values= c(dna.col, rna.col)) +
+  theme_classic() +
+  labs(
+    x= "Transect",
+    y= "Shannon Diversity"
+  ) +
+  scale_x_discrete(labels= c("T1", "T2", "T3", "T4")) +
+  scale_y_continuous(breaks = c(1,2,3,4), labels= c("1.00", "2.00", "3.00", "4.00")) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+    )
+
+diss.both.master <- bind_rows(dissrna.master, dissdna.master)
+diss.both.master <- diss.both.master[complete.cases(diss.both.master),]
+
+all.beta.diversity.fig <-
+  ggplot(diss.both.master[diss.both.master$group=="all",], aes(as.factor(transect), similarity, fill= acid_type), na.rm=TRUE) +
+  geom_boxplot(aes(), outlier.alpha = 0)+
+  geom_point(aes(alpha= pt), 
+             position = position_jitterdodge(jitter.width= 0.1)) +
+  scale_fill_manual(name= "Nucleic acid \ntype", values= c(dna.col, rna.col)) +
+  scale_y_continuous(breaks = c(40, 44, 48), labels= c("40.0", "44.0", "48.0")) +
+  theme_classic() +
+  labs(
+    x= "Transect",
+    y= "Spp. Turnover"
+  ) +
+  scale_x_discrete(labels= c("T1", "T2", "T3", "T4")) +
+  theme(
+    legend.position = "none"
+    )
+all.diss.test <-diss.both.master[diss.both.master$group=="all",]
+all.diss.test <- all.diss.test %>% 
+  mutate(trans.acid = paste(transect, acid_type, sep= "_"))
+all.beta.diversity.fig.hsd <- HSD.test(aov(similarity~trans.acid, data= all.diss.test), "trans.acid", group=T)
+
+
+
+plot_grid(all.alpha.diversity.fig, blankPlot, all.shannon.diversity.fig, acid.legend, all.beta.diversity.fig, blankPlot,
+             nrow= 3, ncol=2, rel_widths= (c(2.5,.8)), heights= c(1.5,1.5,1.7), labels= c("a.", "", "b.", "","c.",  ""))
+ggsave(here("figures", "polished", "transect_diversity.pdf"), width= (7*1.1), height= (5*1.1))
+
+plot_grid(all.alpha.diversity.fig, blankPlot, all.shannon.diversity.fig, acid.legend, all.beta.diversity.fig, blankPlot,
+             nrow= 3, ncol=2, rel_widths= (c(2.5,.8)), heights= c(1.5,1.5,1.7))
+#ggsave(here("figures", "polished", "transect_diversity_nolabels.pdf"), width= (7*1.1), height= (5*1.1))
+```
+
+
+```{r, echo= FALSE, include= FALSE}
+t.test(a.diversity~acid, data = st.all.0.b.div[st.all.0.b.div$transect=="t1",])
+t.test(a.diversity~acid, data = st.all.0.b.div[st.all.0.b.div$transect=="t2",])
+t.test(a.diversity~acid, data = st.all.0.b.div[st.all.0.b.div$transect=="t3",])
+t.test(a.diversity~acid, data = st.all.0.b.div[st.all.0.b.div$transect=="t4",])
+
+t.test(s.diversity~acid, data = st.all.0.b.div[st.all.0.b.div$transect=="t1",])
+t.test(s.diversity~acid, data = st.all.0.b.div[st.all.0.b.div$transect=="t2",])
+t.test(s.diversity~acid, data = st.all.0.b.div[st.all.0.b.div$transect=="t3",])
+t.test(s.diversity~acid, data = st.all.0.b.div[st.all.0.b.div$transect=="t4",])
+
+t.test(similarity~acid_type, data=all.diss.test[all.diss.test$transect=="20.2001",] )
+t.test(similarity~acid_type, data=all.diss.test[all.diss.test$transect=="20.2002",] )
+t.test(similarity~acid_type, data=all.diss.test[all.diss.test$transect=="20.2003",] )
+t.test(similarity~acid_type, data=all.diss.test[all.diss.test$transect=="20.2004",] )
+
+
+TukeyHSD(aov(lm(a.diversity~transect, data = st.all.0.b.div[st.all.0.b.div$acid=="DNA",])))
+TukeyHSD(aov(lm(a.diversity~transect, data = st.all.0.b.div[st.all.0.b.div$acid=="RNA",])))
+TukeyHSD(aov(lm(s.diversity~transect, data = st.all.0.b.div[st.all.0.b.div$acid=="DNA",])))
+TukeyHSD(aov(lm(s.diversity~transect, data = st.all.0.b.div[st.all.0.b.div$acid=="RNA",])))
+
+
+TukeyHSD(aov(lm(similarity~as.factor(transect), data=all.diss.test[all.diss.test$acid_type=="DNA",] )))
+TukeyHSD(aov(lm(similarity~as.factor(transect), data=all.diss.test[all.diss.test$acid_type=="RNA",] )))
+```
+
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+man.tab.all.0.d<- st.all.0.d %>% 
+dplyr::select( qudo, quag, pisa) %>% 
+  mutate(none = 1-(qudo+quag+pisa))
+
+man.tab.all.0.r<- st.all.0.r %>% 
+dplyr::select( qudo, quag, pisa) %>% 
+  mutate(none = 1-(qudo+quag+pisa))
+
+man.tab.ect.0.d<- st.ect.0.d %>% 
+dplyr::select( qudo, quag, pisa) %>% 
+  mutate(none = 1-(qudo+quag+pisa))
+
+man.tab.ect.0.r<- st.ect.0.r %>% 
+dplyr::select( qudo, quag, pisa) %>% 
+  mutate(none = 1-(qudo+quag+pisa))
+
+man.tab.sap.0.d<- st.sap.0.d %>% 
+dplyr::select( qudo, quag, pisa) %>% 
+  mutate(none = 1-(qudo+quag+pisa))
+
+man.tab.sap.0.r<- st.sap.0.r %>% 
+dplyr::select( qudo, quag, pisa) %>% 
+  mutate(none = 1-(qudo+quag+pisa))
+
+man.test.all.0.d <-mantel(vegdist(t(otu.all.0.d)), vegdist(man.tab.all.0.d))
+man.test.all.0.r <-mantel(vegdist(t(otu.all.0.r)), vegdist(man.tab.all.0.r))
+man.test.ect.0.d <-mantel(vegdist(t(otu.ect.0.d)), vegdist(man.tab.ect.0.d))
+man.test.ect.0.r <-mantel(vegdist(t(otu.ect.0.r)), vegdist(man.tab.ect.0.r))
+man.test.sap.0.d <-mantel(vegdist(t(otu.sap.0.d)), vegdist(man.tab.sap.0.d))
+man.test.sap.0.r <-mantel(vegdist(t(otu.sap.0.r)), vegdist(man.tab.sap.0.r))
+
+man.test.all.0.d.tib <-  c(round(man.test.all.0.d$statistic[1], 4), round(man.test.all.0.d$signif[1], 4))
+man.test.all.0.r.tib <-  c(round(man.test.all.0.r$statistic[1], 4), round(man.test.all.0.r$signif[1], 4)) 
+man.test.ect.0.d.tib <-  c(round(man.test.ect.0.d$statistic[1], 4), round(man.test.ect.0.d$signif[1], 4)) 
+man.test.ect.0.r.tib <-  c(round(man.test.ect.0.r$statistic[1], 4), round(man.test.ect.0.r$signif[1], 4)) 
+man.test.sap.0.d.tib <-  c(round(man.test.sap.0.d$statistic[1], 4), round(man.test.sap.0.d$signif[1], 4))
+man.test.sap.0.r.tib <-  c(round(man.test.sap.0.r$statistic[1], 4), round(man.test.sap.0.r$signif[1], 4))
+
+
+mantel.test.tibble <- tibble(man.test.all.0.d.tib, man.test.all.0.r.tib, man.test.ect.0.d.tib, 
+                        man.test.ect.0.r.tib, man.test.sap.0.d.tib, man.test.sap.0.r.tib)
+  rownames(mantel.test.tibble) <- c("Mantel r", "P-value")
+
+
+mantel.test.tibble %>% 
+  kable(col.names = c("All fungi DNA", "All fungi RNA", "Ectomycorrhizal DNA", "Ectomycorrhizal RNA",
+                      "Saprotrophic DNA", "Saprotrophic RNA"), escape= FALSE) %>%
+  kable_classic() %>% 
+  save_kable(here("figures", "polished", "env_mantel_supplement.html"))
+
+
+```
+
+Spatial mantel
+
+```{r}
+dist.man.tib.all.0.d = st.all.0.d %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect" = "position_along_transect_m") )
+dist.man.all.0.d = mantel(dist(t(otu.all.0.d)), dist(dist.man.tib.all.0.d %>% 
+  dplyr::select("lat", "long")))
+
+dist.man.tib.all.0.r = st.all.0.r %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect" = "position_along_transect_m") )
+dist.man.all.0.r = mantel(dist(t(otu.all.0.r)), dist(dist.man.tib.all.0.r %>% 
+  dplyr::select("lat", "long")))
+
+
+dist.man.tib.ect.0.d = st.ect.0.d %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect" = "position_along_transect_m") )
+dist.man.ect.0.d = mantel(dist(t(otu.ect.0.d)), dist(dist.man.tib.ect.0.d %>% 
+  dplyr::select("lat", "long")))
+
+dist.man.tib.ect.0.r = st.ect.0.r %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect" = "position_along_transect_m") )
+dist.man.ect.0.r = mantel(dist(t(otu.ect.0.r)), dist(dist.man.tib.ect.0.r %>% 
+  dplyr::select("lat", "long")))
+
+
+dist.man.tib.sap.0.d = st.sap.0.d %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect" = "position_along_transect_m") )
+dist.man.sap.0.d = mantel(dist(t(otu.sap.0.d)), dist(dist.man.tib.sap.0.d %>% 
+  dplyr::select("lat", "long")))
+
+dist.man.tib.sap.0.r = st.sap.0.r %>% 
+  left_join(sedg.coord, by= c("site_tree_id_transect_id" = "transect_id", 
+                              "dist_along_transect" = "position_along_transect_m") )
+dist.man.sap.0.r = mantel(dist(t(otu.sap.0.r)), dist(dist.man.tib.sap.0.r %>% 
+  dplyr::select("lat", "long")))
+
+```
+
+
+
+```{r}
+dist.man.all.0.d.tib <-  c(round(dist.man.all.0.d$statistic[1], 4), round(dist.man.all.0.d$signif[1], 4))
+dist.man.all.0.r.tib <-  c(round(dist.man.all.0.r$statistic[1], 4), round(dist.man.all.0.r$signif[1], 4)) 
+dist.man.ect.0.d.tib <-  c(round(dist.man.ect.0.d$statistic[1], 4), round(dist.man.ect.0.d$signif[1], 4)) 
+dist.man.ect.0.r.tib <-  c(round(dist.man.ect.0.r$statistic[1], 4), round(dist.man.ect.0.r$signif[1], 4)) 
+dist.man.sap.0.d.tib <-  c(round(dist.man.sap.0.d$statistic[1], 4), round(dist.man.sap.0.d$signif[1], 4))
+dist.man.sap.0.r.tib <-  c(round(dist.man.sap.0.r$statistic[1], 4), round(dist.man.sap.0.r$signif[1], 4))
+
+mantel.dist.tibble <- tibble(dist.man.all.0.d.tib, dist.man.all.0.r.tib, dist.man.ect.0.d.tib, 
+                        dist.man.ect.0.r.tib, dist.man.sap.0.d.tib, dist.man.sap.0.r.tib)
+  rownames(mantel.dist.tibble) <- c("Mantel r", "P-value")
+
+
+mantel.dist.tibble %>% 
+  kable(col.names = c("All fungi DNA", "All fungi RNA", "Ectomycorrhizal DNA", "Ectomycorrhizal RNA",
+                      "Saprotrophic DNA", "Saprotrophic RNA"), escape= FALSE) %>%
+  kable_classic() %>% 
+  save_kable(here("figures", "polished", "distance_mantel_supplement.html"))
+```
+
+
+
+
+```{r,include=FALSE}
+st.all.0.b.hosti <- st.all.0.b %>% 
+  mutate(total.sum = qudo+quag+pisa) %>% 
+  mutate(no.neighb = 1-(qudo+quag+pisa)) 
+  
+st.all.0.b.hosti <- st.all.0.b.hosti %>% 
+  mutate(hostiness = diversity(dplyr::select(st.all.0.b.hosti, qudo, quag, pisa, no.neighb)
+                               , index = "shannon",)) %>% 
+ mutate(s.diversity = diversity(t(otu_table(sedg.all.0.b)))) %>% 
+mutate(a.diversity = specnumber(t(otu_table(sedg.all.0.b))))
+
+
+ggplot(st.all.0.b.hosti, aes(x=quag, y= s.diversity)) +
+  geom_point()
+
+```
+
+## NMDS Zone
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+DNA.set.all.lab <- DNA.set.all %>% 
+  mutate(group = "All fungi") %>% 
+  mutate(acid_type = "DNA")
+RNA.set.all.lab <- RNA.set.all %>% 
+  mutate(group = "All fungi") %>% 
+  mutate(acid_type = "RNA")
+
+DNA.set.sym.lab <- DNA.set.sym %>% 
+  mutate(group = "Symbiotrophic") %>% 
+  mutate(acid_type = "DNA")
+RNA.set.sym.lab <- RNA.set.sym %>% 
+  mutate(group = "Symbiotrophic") %>% 
+  mutate(acid_type = "RNA")
+
+DNA.set.ect.lab <- DNA.set.ect %>% 
+  mutate(group = "Ectomycorrhizal") %>% 
+  mutate(acid_type = "DNA")
+RNA.set.ect.lab <- RNA.set.ect %>% 
+  mutate(group = "Ectomycorrhizal") %>% 
+  mutate(acid_type = "RNA")
+
+DNA.set.sap.lab <- DNA.set.sap %>% 
+  mutate(group = "Saprotrophic") %>% 
+  mutate(acid_type = "DNA")
+RNA.set.sap.lab <- RNA.set.sap %>% 
+  mutate(group = "Saprotrophic") %>% 
+  mutate(acid_type = "RNA")
+
+
+nmds.master <- bind_rows(
+  DNA.set.all.lab, RNA.set.all.lab,
+  DNA.set.sym.lab, RNA.set.sym.lab,
+  DNA.set.ect.lab, RNA.set.ect.lab,
+  DNA.set.sap.lab, RNA.set.sap.lab
+)
+
+nmds.ecto.sap <- nmds.master %>% 
+  filter(group !="All fungi") %>% 
+  filter(group!= "Symbiotrophic")
+
+fig.sap.ecto.nmds <- 
+  ggplot(nmds.ecto.sap) +
+  geom_point(aes(NMDS1, NMDS2,  shape= as.factor(transect)), size =3, color= oakiness.col) +
+  geom_point(aes(NMDS1, NMDS2,  shape= as.factor(transect)), size =3, color= pininess.col) +
+  facet_grid(acid_type~ group) +
+  xlim(-.5, .5)+
+  ylim(-.5, .5)+
+  scale_shape_manual(values= c(15,16,17,18), name= "Transect", labels= c("Transect 1", "Transect 2", 
+                                                                         "Transect 3", "Transect 4" ))+ 
+  scale_alpha_continuous(name= "Neighbor \navailability") +
+  theme_classic()
+
+fig.black.shapes <- 
+  ggplot(nmds.ecto.sap) +
+  geom_point(aes(NMDS1, NMDS2,  shape= as.factor(transect)), size =3, color= "gray47")+
+  scale_shape_manual(values= c(15,16,17,18), name= "Transect", labels= c("Transect 1", "Transect 2", "Transect 3", "Transect 4" ))
+
+shape.legend <- get_legend(fig.black.shapes)
+
+fig.sap.ecto.nmds.cleaned <-
+  ggplot(nmds.ecto.sap) +
+  geom_point(aes(NMDS1, NMDS2, alpha= (qudo.rescaled+quag.rescaled), shape= as.factor(transect)), size =3, color= oakiness.col) +
+  geom_point(aes(NMDS1, NMDS2, alpha= pisa.rescaled, shape= as.factor(transect)), size =3, color= pininess.col) +
+  facet_grid(acid_type~ group) +
+  xlim(-.5, .5)+
+  ylim(-.5, .5)+
+  scale_shape_manual(values= c(15,16,17,18), name= "Transect", labels= c("Transect 1", "Transect 2", 
+                                                                         "Transect 3", "Transect 4" ))+ 
+  scale_alpha_continuous(name= "Neighbor \navailability") +
+  theme_classic() +
+  theme(legend.position = "none",
+        panel.border = element_rect(colour = "black", fill=NA, size=1),
+        axis.line = element_blank())
+  
+pine.gradient.plot <- 
+  ggplot(nmds.ecto.sap) +
+  geom_point(aes(NMDS1, NMDS2, color= pisa.rescaled), size =3) +
+  scale_color_gradient(low = "white", high = pininess.col, name= "Pine influence")
+pine.gradient.legend <- get_legend(pine.gradient.plot)
+
+oak.gradient.plot <- 
+  ggplot(nmds.ecto.sap) +
+  geom_point(aes(NMDS1, NMDS2, color= (qudo.rescaled+quag.rescaled)), size =3) +
+  scale_color_gradient(low = "white", high = oakiness.col, name= "Oak influence")
+oak.gradient.legend <- get_legend(oak.gradient.plot)
+
+#pdf(here("figures", "polished", "acid_guild_nmds.pdf"), width= 7, height= 5)
+grid.arrange(fig.sap.ecto.nmds.cleaned, shape.legend, oak.gradient.legend, pine.gradient.legend,
+             layout_matrix = rbind(c(1,3), c(1,4), c(1,2)), widths= c(6,1.25), heights= c(1.5, 1.5, 1.5))
+#dev.off()
+```
+
+```{r cn nmds, include= FALSE}
+
+
+  ggplot(nmds.ecto.sap) +
+  geom_point(aes(NMDS1, NMDS2, alpha= organic, shape= as.factor(transect)), size =3, color= "cadetblue4") +
+  facet_grid(acid_type~ group) +
+  xlim(-.5, .5)+
+  ylim(-.5, .5)+
+  scale_shape_manual(values= c(15,16,17,18), name= "Transect", labels= c("Transect 1", "Transect 2", 
+                                                                         "Transect 3", "Transect 4" ))+ 
+  scale_alpha_continuous(name= "Neighbor \navailability") +
+  theme_classic() +
+  theme(legend.position = "none",
+        panel.border = element_rect(colour = "black", fill=NA, size=1),
+        axis.line = element_blank())
+  
+
+
+```
+
+
+
+```{r, echo= FALSE, include= FALSE}
+fig.master.mds <-
+  ggplot(nmds.master) +
+  geom_point(aes(NMDS1, NMDS2, alpha= (qudo.rescaled+quag.rescaled), shape= as.factor(transect)), size =3, color= oakiness.col) +
+  geom_point(aes(NMDS1, NMDS2, alpha= pisa.rescaled, shape= as.factor(transect)), size =3, color= pininess.col) +
+  facet_grid(acid_type~ group) +
+  xlim(-.5, .5)+
+  ylim(-.5, .5)+
+  scale_shape_manual(values= c(15,16,17,18), name= "Transect", labels= c("Transect 1", "Transect 2", 
+                                                                         "Transect 3", "Transect 4" ))+ 
+  scale_alpha_continuous(name= "Neighbor \navailability") +
+  theme_classic() +
+  theme(legend.position = "none",
+        panel.border = element_rect(colour = "black", fill=NA, size=1),
+        axis.line = element_blank())
+fig.master.mds
+```
+
+
+
+
+## Permanova table
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+st.all.0.r.hosti <- st.all.0.r %>% 
+  mutate(total.sum = qudo+quag+pisa) %>% 
+  mutate(no.neighb = 1-(qudo+quag+pisa)) 
+st.all.0.r.hosti <- st.all.0.r.hosti %>% 
+  mutate(hostiness = diversity(dplyr::select(st.all.0.r.hosti, qudo, quag, pisa, no.neighb)))
+
+st.all.0.d.hosti <- st.all.0.d %>% 
+  mutate(total.sum = qudo+quag+pisa) %>% 
+  mutate(no.neighb = 1-(qudo+quag+pisa)) 
+st.all.0.d.hosti <- st.all.0.d.hosti %>% 
+  mutate(hostiness = diversity(dplyr::select(st.all.0.d.hosti, qudo, quag, pisa, no.neighb)))  
+
+
+st.ect.0.r.hosti <- st.ect.0.r %>% 
+  mutate(total.sum = qudo+quag+pisa) %>% 
+  mutate(no.neighb = 1-(qudo+quag+pisa)) 
+st.ect.0.r.hosti <- st.ect.0.r.hosti %>% 
+  mutate(hostiness = diversity(dplyr::select(st.ect.0.r.hosti, qudo, quag, pisa, no.neighb)))
+
+st.ect.0.d.hosti <- st.ect.0.d %>% 
+  mutate(total.sum = qudo+quag+pisa) %>% 
+  mutate(no.neighb = 1-(qudo+quag+pisa)) 
+st.ect.0.d.hosti <- st.ect.0.d.hosti %>% 
+  mutate(hostiness = diversity(dplyr::select(st.ect.0.d.hosti, qudo, quag, pisa, no.neighb))) 
+
+
+st.sap.0.r.hosti <- st.sap.0.r %>% 
+  mutate(total.sum = qudo+quag+pisa) %>% 
+  mutate(no.neighb = 1-(qudo+quag+pisa)) 
+st.sap.0.r.hosti <- st.sap.0.r.hosti %>% 
+  mutate(hostiness = diversity(dplyr::select(st.sap.0.r.hosti, qudo, quag, pisa, no.neighb)))
+
+st.sap.0.d.hosti <- st.sap.0.d %>% 
+  mutate(total.sum = qudo+quag+pisa) %>% 
+  mutate(no.neighb = 1-(qudo+quag+pisa)) 
+st.sap.0.d.hosti <- st.sap.0.d.hosti %>% 
+  mutate(hostiness = diversity(dplyr::select(st.sap.0.d.hosti, qudo, quag, pisa, no.neighb))) 
+                               
+```
+
+```{r, echo=FALSE, mesage= FALSE, warning=FALSE, include=FALSE}
+#sdm.all.0.d <- phyloseq::distance(sedg.all.0.d, method = "bray")
+#bio.all.0.d <- bioenv(sdm.all.0.d~p_h+nitrogen_percent+qudo+quag+pisa+percent_soil_moisture, data= st.all.0.d, metric = "euclidean")
+#sdm.all.0.r <- phyloseq::distance(sedg.all.0.r, method = "bray")
+#bio.all.0.r <- bioenv(sdm.all.0.r~ p_h+nitrogen_percent+qudo+quag+pisa+percent_soil_moisture,  data= st.all.0.r, metric = "euclidean")
+
+#bio.all.0.d
+#bio.all.0.r
+
+sdm.ect.0.d <- phyloseq::distance(sedg.ect.0.d, method = "bray")
+bio.ect.0.d <- bioenv(sdm.ect.0.d~
+                        p_h+nitrogen_percent+qudo+quag+pisa+percent_soil_moisture+p_mg_kg+as.numeric(litter_depth_cm)+c_n_ratio, 
+                      data= st.ect.0.d, metric = "euclidean")
+sdm.ect.0.r <- phyloseq::distance(sedg.ect.0.r, method = "bray")
+bio.ect.0.r <- bioenv(sdm.ect.0.r~
+                        p_h+nitrogen_percent+qudo+quag+pisa+percent_soil_moisture+p_mg_kg+as.numeric(litter_depth_cm)+c_n_ratio, 
+                      data= st.ect.0.r, metric = "euclidean")
+
+
+sdm.sap.0.d <- phyloseq::distance(sedg.sap.0.d, method = "bray")
+bio.sap.0.d <- bioenv(sdm.sap.0.d~
+                        p_h+nitrogen_percent+qudo+quag+pisa+percent_soil_moisture+p_mg_kg+as.numeric(litter_depth_cm)+c_n_ratio, 
+                      data= st.sap.0.d, metric = "euclidean")
+sdm.sap.0.r <- phyloseq::distance(sedg.sap.0.r, method = "bray")
+bio.sap.0.r <- bioenv(sdm.sap.0.r~
+                        p_h+nitrogen_percent+qudo+quag+pisa+percent_soil_moisture+p_mg_kg+as.numeric(litter_depth_cm)+c_n_ratio, 
+                      data= st.sap.0.r, metric = "euclidean")
+
+#bio.ect.0.d
+#bio.ect.0.r
+#bio.sap.0.d
+#bio.sap.0.r
+
+st.ect.0.d$litter_depth_cm <- st.ect.0.d$litter_depth_cm %>% 
+  as.numeric() %>% 
+  replace_na(., "0")
+st.ect.0.r$litter_depth_cm <- st.ect.0.r$litter_depth_cm %>% 
+  as.numeric() %>% 
+  replace_na(., "0")
+st.sap.0.d$litter_depth_cm <- st.sap.0.d$litter_depth_cm %>% 
+  as.numeric() %>% 
+  replace_na(., "0")
+st.sap.0.r$litter_depth_cm <- st.sap.0.r$litter_depth_cm %>% 
+  as.numeric() %>% 
+  replace_na(., "0")
+```
+
+
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE, include=FALSE}
+
+as.ect.0.d <- adonis2(sdm.ect.0.d~pisa+quag+qudo+c_n_ratio+p_h+litter_depth_cm+p_mg_kg+nitrogen_percent+transect, 
+                      data= st.ect.0.d, by = 'margin')
+as.ect.0.r <- adonis2(sdm.ect.0.r~pisa+quag+qudo+c_n_ratio+p_h+litter_depth_cm+p_mg_kg+nitrogen_percent+transect, 
+                      data= st.ect.0.r, by = 'margin')
+
+as.sap.0.d <- adonis2(sdm.sap.0.d~pisa+quag+qudo+c_n_ratio+p_h+litter_depth_cm+p_mg_kg+nitrogen_percent+transect, 
+                      data= st.sap.0.d, by = 'margin')
+as.sap.0.r <- adonis2(sdm.sap.0.r~pisa+quag+qudo+c_n_ratio+p_h+litter_depth_cm+p_mg_kg+nitrogen_percent+transect, 
+                       data= st.sap.0.r, by = 'margin')
+
+as.ect.0.d <- adonis2(sdm.ect.0.d~pisa+quag+qudo+c_n_ratio+p_h+litter_depth_cm+p_mg_kg+nitrogen_percent, 
+                      strata= transect, data= st.ect.0.d, by = 'margin')
+as.ect.0.r <- adonis2(sdm.ect.0.r~pisa+quag+qudo+c_n_ratio+p_h+litter_depth_cm+p_mg_kg+nitrogen_percent, 
+                      strata= transect, data= st.ect.0.r, by = 'margin')
+
+as.sap.0.d <- adonis2(sdm.sap.0.d~pisa+quag+qudo+c_n_ratio+p_h+litter_depth_cm+p_mg_kg+nitrogen_percent, 
+                      strata= transect, data= st.sap.0.d, by = 'margin')
+as.sap.0.r <- adonis2(sdm.sap.0.r~pisa+quag+qudo+c_n_ratio+p_h+litter_depth_cm+p_mg_kg+nitrogen_percent, 
+                      strata= transect, data= st.sap.0.r, by = 'margin')
+
+#as.ect.0.d
+#as.ect.0.r
+#as.sap.0.d
+#as.sap.0.r
+```
+
+
+
+
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE, include=FALSE}
+
+parameters <- c("PISA",  "QUAG", "QUDO", "C:N ratio", "pH", "Litter depth (cm)", "Phosphorus (mg/kg)", "Percent nitrogen", "Residual", "Total")
+sap.dna.perm <- tibble(as.sap.0.d) 
+sap.dna.perm <- sap.dna.perm %>% 
+  mutate(Parameter = parameters) %>% 
+  dplyr::select("Parameter", "R2", "Pr(>F)") %>% 
+  mutate(Perc_of_model = R2/(1-R2[9]))
+
+sap.dna.into <- sap.dna.perm %>% 
+  filter(Perc_of_model < 1) %>% 
+  filter(Perc_of_model > .1) 
+
+perm.table.df <- tibble("sapdna", "saprna", "ectdna", "ectrna")
+
+```
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE, include= FALSE}
+attempt <- tibble(as.sap.0.d[,3], as.sap.0.d[,5], as.ect.0.d[,3], as.ect.0.d[,5], as.sap.0.r[,3], as.sap.0.r[,5], as.ect.0.r[,3], as.ect.0.r[,5] ) 
+  colnames(attempt) <- c("sap.dna.r2", "sap.dna.p", "ect.dna.r2", "ect.dna.p", 
+                         "sap.rna.r2", "sap.rna.p", "ect.rna.r2", "ect.rna.p") 
+ rownames(attempt) <- parameters
+ options(knitr.kable.NA = '')
+ 
+ attempt %>%  
+   mutate(parameter = parameters) %>% 
+   relocate(parameter, 1) %>% 
+  mutate(sap.dna.p = cell_spec(sap.dna.p, bold = ifelse(sap.dna.p < .05, TRUE,FALSE))) %>% 
+  mutate(sap.rna.p = cell_spec(sap.rna.p, bold = ifelse(sap.rna.p < 0.05, TRUE,FALSE)))%>% 
+  mutate(ect.dna.p = cell_spec(ect.dna.p, bold = ifelse(ect.dna.p < 0.05, TRUE,FALSE))) %>% 
+  mutate(ect.rna.p = cell_spec(ect.rna.p, bold = ifelse(ect.rna.p < 0.05, TRUE,FALSE)))%>%
+  kable(col.names = c(" ", "R2", "Pr(>F)", "R2","Pr(>F)", "R2","Pr(>F)", "R2","Pr(>F)"), escape= FALSE, rownames= TRUE) %>%
+  kable_classic() %>% 
+  add_header_above(c(" "= 1, "Saprotrophic" = 2, "Ectomycorrhizal" = 2, "Saprotrophic" = 2, "Ectomycorrhizal" = 2)) %>% 
+  add_header_above(c(" "= 1, "DNA" = 4, "RNA" = 4))
+```
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+
+as.ect.0.d.short <- adonis2(sdm.ect.0.d~pisa+quag+qudo+p_h+p_mg_kg+nitrogen_percent, strata= transect, 
+                      data= st.ect.0.d, by = 'margin')
+as.ect.0.r.short <- adonis2(sdm.ect.0.r~pisa+quag+qudo+p_h+p_mg_kg+nitrogen_percent, strata= transect, 
+                      data= st.ect.0.r, by = 'margin')
+
+as.sap.0.d.short <- adonis2(sdm.sap.0.d~pisa+quag+qudo+p_h+p_mg_kg+nitrogen_percent, strata= transect, 
+                      data= st.sap.0.d, by = 'margin')
+as.sap.0.r.short <- adonis2(sdm.sap.0.r~pisa+quag+qudo+p_h+p_mg_kg+nitrogen_percent, strata= transect, 
+                      data= st.sap.0.r, by = 'margin')
+
+#as.ect.0.d.short
+#as.ect.0.r.short
+#as.sap.0.d.short
+#as.sap.0.r.short
+
+```
+
+
+
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+parameters.short <- c("Gray Pine (PISA)",  "Coast Live Oak (QUAG)", "Blue Oak (QUDO)", "pH", "Phosphorus (mg/kg)", "Percent nitrogen",  "Residual", "Total")
+sap.dna.perm.short <- tibble(as.sap.0.d.short) 
+sap.dna.perm.short <- sap.dna.perm.short %>% 
+  mutate(Parameter = parameters.short) %>% 
+  dplyr::select("Parameter", "R2", "Pr(>F)") %>% 
+  mutate(Perc_of_model = R2/(1-R2[9]))
+
+sap.dna.into.short <- sap.dna.perm.short %>% 
+  filter(Perc_of_model < 1) %>% 
+  filter(Perc_of_model > .1) 
+
+perm.table.df.short <- tibble("sapdna", "saprna", "ectdna", "ectrna")
+
+```
+
+```{r, echo= FALSE, message= FALSE, warning=FALSE}
+attempt.short <- tibble(as.sap.0.d.short[,3], as.sap.0.d.short[,5], as.ect.0.d.short[,3], as.ect.0.d.short[,5], as.sap.0.r.short[,3], as.sap.0.r.short[,5], as.ect.0.r.short[,3], as.ect.0.r.short[,5] ) 
+  colnames(attempt.short) <- c("sap.dna.r2", "sap.dna.p", "ect.dna.r2", "ect.dna.p", 
+                         "sap.rna.r2", "sap.rna.p", "ect.rna.r2", "ect.rna.p") 
+ rownames(attempt.short) <- parameters.short
+ options(knitr.kable.NA = '')
+ 
+ attempt.short <- attempt.short %>% 
+   mutate(sap.dna.r2 = round(sap.dna.r2, 4)) %>% 
+   mutate(sap.rna.r2 = round(sap.rna.r2, 4)) %>% 
+   mutate(ect.dna.r2 = round(ect.dna.r2, 4)) %>% 
+   mutate(ect.rna.r2 = round(ect.rna.r2, 4))
+ 
+ 
+attempt.short <-  attempt.short %>%  
+   mutate(parameter = parameters.short) %>% 
+   relocate(parameter, 1) %>% 
+  mutate(sap.dna.p = cell_spec(sap.dna.p, bold = ifelse(sap.dna.p < .05, TRUE,FALSE))) %>% 
+  mutate(sap.rna.p = cell_spec(sap.rna.p, bold = ifelse(sap.rna.p < 0.05, TRUE,FALSE)))%>% 
+  mutate(ect.dna.p = cell_spec(ect.dna.p, bold = ifelse(ect.dna.p < 0.05, TRUE,FALSE))) %>% 
+  mutate(ect.rna.p = cell_spec(ect.rna.p, bold = ifelse(ect.rna.p < 0.05, TRUE,FALSE))) 
+  kable(attempt.short, 
+        col.names = c(" ", "R$^2$", "Pr(>F)", "R$^2$","Pr(>F)", "R$^2$","Pr(>F)", "R$^2$","Pr(>F)"),escape= FALSE, rownames= TRUE) %>%
+  kable_classic() %>% 
+  add_header_above(c(" "= 1, "Saprotrophic" = 2, "Ectomycorrhizal" = 2, "Saprotrophic" = 2, "Ectomycorrhizal" = 2)) %>% 
+  add_header_above(c(" "= 1, "DNA" = 4, "RNA" = 4))#%>% 
+ #save_kable(here("figures", "polished", "permanova_table_main.html"))
+
+```
+
+
+
+#### NMDS Permanova table for supplement or referenceco 
+```{r, echo= FALSE, message=FALSE, warning=FALSE}
+
+as.ect.0.d.nmds <- adonis2(sdm.ect.0.d~pisa+oak, strata= transect,
+                      data= st.ect.0.d, by = 'margin')
+as.ect.0.r.nmds <- adonis2(sdm.ect.0.r~pisa+oak, strata= transect,
+                      data= st.ect.0.r, by = 'margin')
+
+as.sap.0.d.nmds <- adonis2(sdm.sap.0.d~pisa+oak, strata= transect,
+                      data= st.sap.0.d, by = 'margin')
+as.sap.0.r.nmds <- adonis2(sdm.sap.0.r~pisa+oak, strata= transect,
+                      data= st.sap.0.r, by = 'margin')
+
+#as.ect.0.d.nmds
+#as.ect.0.r.nmds
+#as.sap.0.d.nmds
+#as.sap.0.r.nmds
+```
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+parameters.nmds <- c("Pine",  "Oak","Residual", "Total")
+sap.dna.perm.nmds <- tibble(as.sap.0.d.nmds) 
+sap.dna.perm.nmds <- sap.dna.perm.nmds %>% 
+  mutate(Parameter = parameters.nmds) %>% 
+  dplyr::select("Parameter", "R2", "Pr(>F)") %>% 
+  mutate(Perc_of_model = R2/(1-R2[9]))
+
+sap.dna.into.nmds <- sap.dna.perm.nmds %>% 
+  filter(Perc_of_model < 1) %>% 
+  filter(Perc_of_model > .1) 
+
+perm.table.df.nmds <- tibble("sapdna", "saprna", "ectdna", "ectrna")
+
+```
+
+```{r, echo= FALSE, message= FALSE, warning=FALSE}
+attempt.nmds <- tibble(as.sap.0.d.nmds[,3], as.sap.0.d.nmds[,5], as.ect.0.d.nmds[,3], as.ect.0.d.nmds[,5], as.sap.0.r.nmds[,3], as.sap.0.r.nmds[,5], as.ect.0.r.nmds[,3], as.ect.0.r.nmds[,5] ) 
+  colnames(attempt.nmds) <- c("sap.dna.r2", "sap.dna.p", "ect.dna.r2", "ect.dna.p", 
+                         "sap.rna.r2", "sap.rna.p", "ect.rna.r2", "ect.rna.p") 
+ rownames(attempt.nmds) <- parameters.nmds
+ options(knitr.kable.NA = '')
+ 
+  attempt.nmds <- attempt.nmds %>% 
+   mutate(sap.dna.r2 = round(sap.dna.r2, 4)) %>% 
+   mutate(sap.rna.r2 = round(sap.rna.r2, 4)) %>% 
+   mutate(ect.dna.r2 = round(ect.dna.r2, 4)) %>% 
+   mutate(ect.rna.r2 = round(ect.rna.r2, 4))
+ 
+ attempt.nmds %>%  
+   mutate(parameter = parameters.nmds) %>% 
+   relocate(parameter, 1) %>% 
+  mutate(sap.dna.p = cell_spec(sap.dna.p, bold = ifelse(sap.dna.p < .05, TRUE,FALSE))) %>% 
+  mutate(sap.rna.p = cell_spec(sap.rna.p, bold = ifelse(sap.rna.p < 0.05, TRUE,FALSE)))%>% 
+  mutate(ect.dna.p = cell_spec(ect.dna.p, bold = ifelse(ect.dna.p < 0.05, TRUE,FALSE))) %>% 
+  mutate(ect.rna.p = cell_spec(ect.rna.p, bold = ifelse(ect.rna.p < 0.05, TRUE,FALSE)))%>%
+  kable(col.names = c(" ", "R$^2$", "Pr(>F)", "R$^2$","Pr(>F)", "R$^2$","Pr(>F)", "R$^2$","Pr(>F)"), escape= FALSE, rownames= TRUE) %>%
+  kable_classic() %>% 
+  add_header_above(c(" "= 1, "Saprotrophic" = 2, "Ectomycorrhizal" = 2, "Saprotrophic" = 2, "Ectomycorrhizal" = 2)) %>% 
+  add_header_above(c(" "= 1, "DNA" = 4, "RNA" = 4))#%>% 
+   #save_kable(here("figures", "polished", "permanova_table_supplement.html"))
+```
+
+## Species accumulation curves
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+otu.all.0.r <- data.matrix(as.data.frame(otu_table(sedg.all.0.r)))
+otu.all.0.d <- data.matrix(as.data.frame(otu_table(sedg.all.0.d)))
+otu.ect.0.r <- data.matrix(as.data.frame(otu_table(sedg.ect.0.r)))
+otu.ect.0.d <- data.matrix(as.data.frame(otu_table(sedg.ect.0.d)))
+otu.sap.0.r <- data.matrix(as.data.frame(otu_table(sedg.sap.0.r)))
+otu.sap.0.d <- data.matrix(as.data.frame(otu_table(sedg.sap.0.d)))
+
+
+
+all.r.spp.ac <- specaccum(t(otu.all.0.r), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+all.d.spp.ac <- specaccum(t(otu.all.0.d), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+ect.r.spp.ac <- specaccum(t(otu.ect.0.r), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+ect.d.spp.ac <- specaccum(t(otu.ect.0.d), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+sap.r.spp.ac <- specaccum(t(otu.sap.0.r), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+sap.d.spp.ac <- specaccum(t(otu.sap.0.d), method = "exact", permutations = 100,
+          conditioned =TRUE, gamma = "jack1",  w = NULL)
+
+#pdf(here("figures", "polished", "spp_acc_all.pdf"), width= 7, height= 5)
+plot(all.d.spp.ac, ci.type="poly", col=dna.col, lwd=2, ci.lty=0, ci.col=alpha(dna.col,.6), 
+     xlim=c(0,55),  main= "All fungi species accumulation",
+     xlab= "Samples", ylab= "OTUs Observed")
+lines(all.r.spp.ac, ci.type="poly", col=rna.col, lwd=2, ci.lty=0, ci.col=alpha(rna.col, 0.6))
+legend("topleft", title= "Acid type", inset = .05, legend=c("DNA", "RNA"), fill=c(dna.col, rna.col))
+#dev.off()
+
+#pdf(here("figures", "polished", "spp_acc_ect.pdf"), width= 7, height= 5)
+plot(ect.d.spp.ac, ci.type="poly", col=dna.col, lwd=2, ci.lty=0, ci.col=alpha(dna.col,.6), 
+     xlim=c(0,55),  main= "Ectomycorrhizal fungi species accumulation",
+     xlab= "Samples", ylab= "OTUs Observed")
+lines(ect.r.spp.ac, ci.type="poly", col=rna.col, lwd=2, ci.lty=0, ci.col=alpha(rna.col, 0.6))
+legend("topleft", title= "Acid type", inset = .05, legend=c("DNA", "RNA"), fill=c(dna.col, rna.col))
+#dev.off()
+
+#pdf(here("figures", "polished", "spp_acc_sap.pdf"), width= 7, height= 5)
+plot(sap.d.spp.ac, ci.type="poly", col=dna.col, lwd=2, ci.lty=0, ci.col=alpha(dna.col,.6), 
+     xlim=c(0,55),  main= "Saprotrophic fungi species accumulation",
+     xlab= "Samples", ylab= "OTUs Observed")
+lines(sap.r.spp.ac, ci.type="poly", col=rna.col, lwd=2, ci.lty=0, ci.col=alpha(rna.col, 0.6))
+legend("topleft", title= "Acid type", inset = .05, legend=c("DNA", "RNA"), fill=c(dna.col, rna.col))
+#dev.off()
+```
+
+
+```{r}
+asv.tab.dm <- data.matrix(as.data.frame(otu_table(sedg.all.0.b)))
+asv.tab.dm <- asv.tab.dm[rowSums(asv.tab.dm[])>0,]
+rna.tab <- asv.tab.dm[,grepl("RNA", colnames(asv.tab.dm))]
+dna.tab <- asv.tab.dm[,grepl("DNA", colnames(asv.tab.dm))] 
+colnames(rna.tab) <- sub(".RNA", "", colnames(rna.tab))
+colnames(dna.tab) <- sub(".DNA", "", colnames(dna.tab))
+
+rna.spp.only <- rna.tab[rowSums(rna.tab[])>0,]
+dna.spp.only <- dna.tab[rowSums(dna.tab[])>0,]
+
+
+both.spp <- which(rownames(rna.spp.only) %in% rownames(dna.spp.only))
+
+```
+
+
+
