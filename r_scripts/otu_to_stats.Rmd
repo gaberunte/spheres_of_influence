@@ -7,31 +7,13 @@ output: html_document
 #Libraries
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(plyr)
 library(tidyverse)
 library(phyloseq)
-library(pastecs)
-library(pander)
 library(metagenomeSeq)
 library(vegan)
 library(here)
 library(janitor)
-library(nationalparkcolors)
-library(stats)
-library(ggpubr)
 library(gridExtra)
-library(rstatix)
-library(viridis)
-library(magick)
-library(DESeq2)
-library(dendextend)
-library(viridis)
-library(reshape)
-library(lme4)
-library(emmeans)
-library(lmerTest)
-library(aod)
-library(gdm)
 ```
 
 #Datasets
