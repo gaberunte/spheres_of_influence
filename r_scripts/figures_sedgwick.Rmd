@@ -245,7 +245,7 @@ ph.groups <- tibble(ph.hsd$groups) %>%
 st.all.0.r.relabeled.summ <- st.all.0.r.relabeled %>% 
   group_by(transect) %>% 
   summarize(max.ph = mean(p_h)) %>% 
-  join(ph.groups)
+  plyr::join(ph.groups)
   
 
 ph.transect.stat <- ph.transect +
@@ -270,7 +270,7 @@ moisture.groups <- tibble(moisture.hsd$groups) %>%
 st.all.0.r.relabeled.summ.moisture <- st.all.0.r.relabeled %>% 
   group_by(transect) %>% 
   summarize(moisture = mean(percent_soil_moisture)) %>% 
-  join(moisture.groups)
+  plyr::join(moisture.groups)
 
 moisture.transect.stat <- moisture.transect +
   geom_text(data=st.all.0.r.relabeled.summ.moisture, aes(x=transect,y=moisture + 10,label=groups),vjust=0)
@@ -294,7 +294,7 @@ cn.groups <- tibble(cn.hsd$groups) %>%
 st.all.0.r.relabeled.summ.cn <- st.all.0.r.relabeled %>% 
   group_by(transect) %>% 
   summarize(cn = mean(c_n_ratio)) %>% 
-  join(cn.groups)
+  plyr::join(cn.groups)
 
 cn.transect.stat <- cn.transect +
   geom_text(data=st.all.0.r.relabeled.summ.cn, aes(x=transect,y=cn + 3,label=groups),vjust=0) +
@@ -331,7 +331,7 @@ pisa.groups <- tibble(pisa.hsd$groups) %>%
 pisa.tuk <- st.all.0.r.relabeled %>% 
   group_by(transect) %>% 
   summarize(mean.pisa = mean(pisa)) %>% 
-  join(ph.groups)
+  plyr::join(ph.groups)
 
 pisa.plot.stat <- pisa.plot +
   geom_text(data=pisa.tuk, aes(x=transect,y=mean.pisa -1,label=groups),vjust=0)+
@@ -357,7 +357,7 @@ quag.groups <- tibble(quag.hsd$groups) %>%
 quag.tuk <- st.all.0.r.relabeled %>% 
   group_by(transect) %>% 
   summarize(mean.quag = mean(quag)) %>% 
-  join(ph.groups)
+  plyr::join(ph.groups)
 
 quag.plot.stat <- quag.plot +
   geom_text(data=quag.tuk, aes(x=transect,y=mean.quag -1,label=groups),vjust=0)+
@@ -380,7 +380,7 @@ qudo.groups <- tibble(qudo.hsd$groups) %>%
 qudo.tuk <- st.all.0.r.relabeled %>% 
   group_by(transect) %>% 
   summarize(mean.qudo = mean(qudo)) %>% 
-  join(ph.groups)
+  plyr::join(ph.groups)
 
 qudo.plot.stat <- qudo.plot +
   geom_text(data=qudo.tuk, aes(x=transect,y=mean.qudo -1,label=groups),vjust=0) +
@@ -418,7 +418,7 @@ phos.groups <- tibble(phos.hsd$groups) %>%
 st.all.0.r.relabeled.summ.phos <- st.all.0.r.relabeled %>% 
   group_by(transect) %>% 
   summarize(phos = mean(p_mg_kg)) %>% 
-  join(phos.groups)
+  plyr::join(phos.groups)
 
 phos.transect.stat <- phos.transect +
   geom_text(data=st.all.0.r.relabeled.summ.phos, aes(x=transect,y=phos + 30,label=groups),vjust=0) +
@@ -443,7 +443,7 @@ nitr.groups <- tibble(nitr.hsd$groups) %>%
 st.all.0.r.relabeled.summ.nitr <- st.all.0.r.relabeled %>% 
   group_by(transect) %>% 
   summarize(nitr = mean(nitrogen_percent)) %>% 
-  join(nitr.groups)
+  plyr::join(nitr.groups)
 
 nitr.transect.stat <- nitr.transect +
   geom_text(data=st.all.0.r.relabeled.summ.nitr, aes(x=transect,y=nitr + .2,label=groups),vjust=0)
