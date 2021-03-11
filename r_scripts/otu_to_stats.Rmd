@@ -112,7 +112,6 @@ soil.rna <- metadata; soil.rna$seq_sample = paste(soil.rna$sample_id,".RNA", sep
 sample_table <-bind_rows(soil.dna, soil.rna)
 ```
 
-
 ```{r sample tables for phyloseq}
 #adding some varaibles to all
 sample_table$qudo.rescaled <- sample_table$qudo/max(sample_table$qudo)
