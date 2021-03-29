@@ -12,6 +12,9 @@ Data and code are organized within a single R project (.Rproj). Two .Rmd files (
 
 Figures are in their own folder at the location outputted from the file paths in the figures_sedgwick.Rmd file. 
 
+## Data
+Project data is all available through the 'data' folder. Within this folder, bioinformatic data can be found within the 'forward' subfolder. To the extent possible, data is left in the formatting in which is was received from labs, sequencing facilities, or packages (e.g. FunGuild) throughout the project with any necessary wrangling done in the available R scripts. 
+
 ## Contact
 Please get ahold of Gabe Runte with questions or to access sequence data. This will be accessible through NCBI and we will update this repository with accession numbers. 
 
