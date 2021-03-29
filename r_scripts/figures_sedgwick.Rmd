@@ -771,6 +771,9 @@ nmds.ecto.sap <- nmds.master %>%
   filter(group !="All fungi") %>% 
   filter(group!= "Symbiotrophic")
 
+nmds.all <- nmds.master %>% 
+  filter(group =="All fungi")
+
 fig.sap.ecto.nmds <- 
   ggplot(nmds.ecto.sap) +
   geom_point(aes(NMDS1, NMDS2,  shape= as.factor(transect)), size =3, color= oakiness.col) +
@@ -804,6 +807,21 @@ fig.sap.ecto.nmds.cleaned <-
   theme(legend.position = "none",
         panel.border = element_rect(colour = "black", fill=NA, size=1),
         axis.line = element_blank())
+
+fig.all.nmds.cleaned <-
+  ggplot(nmds.all) +
+  geom_point(aes(NMDS1, NMDS2, alpha= (qudo.rescaled+quag.rescaled), shape= as.factor(transect)), size =3, color= oakiness.col) +
+  geom_point(aes(NMDS1, NMDS2, alpha= pisa.rescaled, shape= as.factor(transect)), size =3, color= pininess.col) +
+  facet_grid(~acid_type) +
+  xlim(-.5, .5)+
+  ylim(-.5, .5)+
+  scale_shape_manual(values= c(15,16,17,18), name= "Transect", labels= c("Transect 1", "Transect 2", 
+                                                                         "Transect 3", "Transect 4" ))+ 
+  scale_alpha_continuous(name= "Neighbor \navailability") +
+  theme_classic() +
+  theme(legend.position = "none",
+        panel.border = element_rect(colour = "black", fill=NA, size=1),
+        axis.line = element_blank())
   
 pine.gradient.plot <- 
   ggplot(nmds.ecto.sap) +
@@ -819,6 +837,10 @@ oak.gradient.legend <- get_legend(oak.gradient.plot)
 
 #pdf(here("figures", "polished", "acid_guild_nmds.pdf"), width= 7, height= 5)
 grid.arrange(fig.sap.ecto.nmds.cleaned, shape.legend, oak.gradient.legend, pine.gradient.legend,
+             layout_matrix = rbind(c(1,3), c(1,4), c(1,2)), widths= c(6,1.25), heights= c(1.5, 1.5, 1.5))
+#dev.off()
+#pdf(here("figures", "polished", "supp_all_nmds.pdf"), width= 7, height= 5)
+grid.arrange(fig.all.nmds.cleaned, shape.legend, oak.gradient.legend, pine.gradient.legend,
              layout_matrix = rbind(c(1,3), c(1,4), c(1,2)), widths= c(6,1.25), heights= c(1.5, 1.5, 1.5))
 #dev.off()
 ```
@@ -1094,7 +1116,67 @@ attempt.short <-  attempt.short %>%
 
 ```
 
+###Supplementary Adonis with Transect
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
 
+as.ect.0.d.transect <- adonis2(sdm.ect.0.d~pisa+quag+qudo+p_h+p_mg_kg+nitrogen_percent+transect, data= st.ect.0.d, by = 'margin')
+as.ect.0.r.transect <- adonis2(sdm.ect.0.r~pisa+quag+qudo+p_h+p_mg_kg+nitrogen_percent+transect, data= st.ect.0.r, by = 'margin')
+as.sap.0.d.transect <- adonis2(sdm.sap.0.d~pisa+quag+qudo+p_h+p_mg_kg+nitrogen_percent+transect, data= st.sap.0.d, by = 'margin')
+as.sap.0.r.transect <- adonis2(sdm.sap.0.r~pisa+quag+qudo+p_h+p_mg_kg+nitrogen_percent+transect, data= st.sap.0.r, by = 'margin')
+
+#as.ect.0.d.transect
+#as.ect.0.r.transect
+#as.sap.0.d.transect
+#as.sap.0.r.transect
+
+```
+
+
+```{r, echo= FALSE, warning= FALSE, message=FALSE}
+parameters.transect <- c("Gray Pine (PISA)",  "Coast Live Oak (QUAG)", "Blue Oak (QUDO)", "pH", "Phosphorus (mg/kg)", "Percent nitrogen", "Transect",  "Residual", "Total")
+sap.dna.perm.transect <- tibble(as.sap.0.d.transect) 
+sap.dna.perm.transect <- sap.dna.perm.transect %>% 
+  mutate(Parameter = parameters.transect) %>% 
+  dplyr::select("Parameter", "R2", "Pr(>F)") %>% 
+  mutate(Perc_of_model = R2/(1-R2[9]))
+
+sap.dna.into.transect <- sap.dna.perm.transect %>% 
+  filter(Perc_of_model < 1) %>% 
+  filter(Perc_of_model > .1) 
+
+perm.table.df.transect <- tibble("sapdna", "saprna", "ectdna", "ectrna")
+
+```
+
+```{r, echo= FALSE, message= FALSE, warning=FALSE}
+attempt.transect <- tibble(as.sap.0.d.transect[,3], as.sap.0.d.transect[,5], as.ect.0.d.transect[,3], as.ect.0.d.transect[,5], as.sap.0.r.transect[,3], as.sap.0.r.transect[,5], as.ect.0.r.transect[,3], as.ect.0.r.transect[,5] ) 
+  colnames(attempt.transect) <- c("sap.dna.r2", "sap.dna.p", "ect.dna.r2", "ect.dna.p", 
+                         "sap.rna.r2", "sap.rna.p", "ect.rna.r2", "ect.rna.p") 
+ rownames(attempt.transect) <- parameters.transect
+ options(knitr.kable.NA = '')
+ 
+ attempt.transect <- attempt.transect %>% 
+   mutate(sap.dna.r2 = round(sap.dna.r2, 4)) %>% 
+   mutate(sap.rna.r2 = round(sap.rna.r2, 4)) %>% 
+   mutate(ect.dna.r2 = round(ect.dna.r2, 4)) %>% 
+   mutate(ect.rna.r2 = round(ect.rna.r2, 4))
+ 
+ 
+attempt.transect <-  attempt.transect %>%  
+   mutate(parameter = parameters.transect) %>% 
+   relocate(parameter, 1) %>% 
+  mutate(sap.dna.p = cell_spec(sap.dna.p, bold = ifelse(sap.dna.p < .05, TRUE,FALSE))) %>% 
+  mutate(sap.rna.p = cell_spec(sap.rna.p, bold = ifelse(sap.rna.p < 0.05, TRUE,FALSE)))%>% 
+  mutate(ect.dna.p = cell_spec(ect.dna.p, bold = ifelse(ect.dna.p < 0.05, TRUE,FALSE))) %>% 
+  mutate(ect.rna.p = cell_spec(ect.rna.p, bold = ifelse(ect.rna.p < 0.05, TRUE,FALSE))) 
+  kable(attempt.transect, 
+        col.names = c(" ", "R$^2$", "Pr(>F)", "R$^2$","Pr(>F)", "R$^2$","Pr(>F)", "R$^2$","Pr(>F)"),escape= FALSE, rownames= TRUE) %>%
+  kable_classic() %>% 
+  add_header_above(c(" "= 1, "Saprotrophic" = 2, "Ectomycorrhizal" = 2, "Saprotrophic" = 2, "Ectomycorrhizal" = 2)) %>% 
+  add_header_above(c(" "= 1, "DNA" = 4, "RNA" = 4))#%>% 
+ #save_kable(here("figures", "polished", "permanova_table_supplement_transect.html"))
+
+```
 
 #### NMDS Permanova table for supplement or referenceco 
 ```{r, echo= FALSE, message=FALSE, warning=FALSE}
@@ -1225,4 +1307,81 @@ both.spp <- which(rownames(rna.spp.only) %in% rownames(dna.spp.only))
 ```
 
 
+## Rarefied data supplement
+```{r}
+set.seed(209)
+OTU_tab_all_rare = rarefy_even_depth(OTU_tab_all)
+otu.all.0.d_rare <- OTU_tab_all_rare[,which(colnames(OTU_tab_all_rare) %in% rownames(sample_table))]
+phyotu.all.0.d_rare <- otu_table(otu.all.0.d_rare, taxa_are_rows = TRUE)
+sedg.all.0.d_rare <- phyloseq(phyotu.all.0.d_rare, physt.all.0.d)
+sedg.all.0.d_rare = transform_sample_counts(sedg.all.0.d_rare, function(x) x/sum(x))
+st.all.0.d_rare <- as_tibble(sample_data(sedg.all.0.d_rare))
+
+st.all.0.d_rare$s.diversity <-diversity(t(otu_table(sedg.all.0.d_rare)))
+st.all.0.d_rare$a.diversity <- specnumber(t(otu_table(sedg.all.0.d_rare)))
+
+otu.all.0.r_rare <- OTU_tab_all_rare[,which(colnames(OTU_tab_all_rare) %in% rownames(sample_table))]
+phyotu.all.0.r_rare <- otu_table(otu.all.0.r_rare, taxa_are_rows = TRUE)
+sedg.all.0.r_rare <- phyloseq(phyotu.all.0.r_rare, physt.all.0.r)
+sedg.all.0.r_rare = transform_sample_counts(sedg.all.0.r_rare, function(x) x/sum(x))
+st.all.0.r_rare <- as_tibble(sample_data(sedg.all.0.r_rare))
+
+st.all.0.r_rare$s.diversity <-diversity(t(otu_table(sedg.all.0.r_rare)))
+st.all.0.r_rare$a.diversity <- specnumber(t(otu_table(sedg.all.0.r_rare)))
+
+st.all.0.r.div_rare <- st.all.0.r_rare %>% 
+  mutate(acid = "RNA")
+st.all.0.d.div_rare <- st.all.0.d_rare %>% 
+  mutate(acid = "DNA")
+st.all.0.b.div_rare <- bind_rows(st.all.0.r.div_rare, st.all.0.d.div_rare)
+  
+
+all.alpha.diversity.fig.bulky_rare <- 
+  ggplot(st.all.0.b.div_rare)+
+  geom_boxplot( aes(x=transect, y= a.diversity, fill= acid), outlier.alpha = 0) +
+  geom_point(aes(x=transect, y= a.diversity, alpha= dist_along_transect, fill= acid), 
+             position = position_jitterdodge(jitter.width= 0.1)) +
+  scale_alpha_continuous(name="Distance along \ntransect (m)") +
+  scale_fill_manual(name= "Nucleic acid \ntype", values= c(dna.col, rna.col)) +
+  theme_classic() +
+  labs(
+    x= "Transect",
+    y= "Spp. Richness"
+  ) +
+  scale_x_discrete(labels= c("T1", "T2", "T3", "T4"))+
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+    )
+
+
+all.alpha.diversity.fig_rare <- all.alpha.diversity.fig.bulky_rare +
+  theme(legend.position = "none")
+
+all.shannon.diversity.fig_rare <- 
+  ggplot(st.all.0.b.div_rare)+
+  geom_boxplot( aes(x=transect, y= s.diversity, fill= acid), outlier.alpha = 0) +
+  geom_point(aes(x=transect, y= s.diversity, alpha= dist_along_transect, fill= acid), 
+             position = position_jitterdodge(jitter.width= 0.1)) +
+  scale_fill_manual(name= "Nucleic acid \ntype", values= c(dna.col, rna.col)) +
+  theme_classic() +
+  labs(
+    x= "Transect",
+    y= "Shannon Diversity"
+  ) +
+  scale_x_discrete(labels= c("T1", "T2", "T3", "T4")) +
+  scale_y_continuous(breaks = c(1,2,3,4), labels= c("1.00", "2.00", "3.00", "4.00")) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+    )
+
+
+plot_grid(all.alpha.diversity.fig_rare, blankPlot, all.shannon.diversity.fig_rare, acid.legend, all.beta.diversity.fig, blankPlot,
+             nrow= 3, ncol=2, rel_widths= (c(2.5,.8)), heights= c(1.5,1.5,1.7))
+ggsave(here::here("figures", "polished", "transect_diversity_rare_nolabels.pdf"), width= (7*1.1), height= (5*1.1))
+```
 
